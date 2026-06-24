@@ -1,0 +1,50 @@
+.role-nav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  background: #f0f5fe;
+  padding: 6px 10px;
+  border-radius: 60px;
+}
+
+.nav-link {
+  background: transparent;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 40px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #2f405b;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-link i {
+  font-size: 14px;
+}
+
+.nav-link.active {
+  background: white;
+  box-shadow: 0 4px 10px rgba(0, 20, 40, 0.04);
+  color: #0b2b4a;
+}
+
+.nav-link:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 640px) {
+  .role-nav {
+    gap: 4px;
+    padding: 4px 8px;
+  }
+  
+  .nav-link {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}

@@ -1,0 +1,50 @@
+/* src/components/common/EmptyState.css */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6a7d98;
+  max-width: 60%;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  background: white;
+  border-radius: 28px;
+  border: 1px solid #e6edf5;
+}
+
+.empty-state i {
+  font-size: 48px;
+  opacity: 0.3;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.empty-state h4 {
+  font-size: 18px;
+  color: #1a2b44;
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: #6a7d98;
+}
+
+@media (max-width: 1024px) {
+  .empty-state {
+    max-width: 70%;
+  }
+}
+
+@media (max-width: 768px) {
+  .empty-state {
+    max-width: 90%;
+    padding: 30px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .empty-state {
+    max-width: 100%;
+  }
+}

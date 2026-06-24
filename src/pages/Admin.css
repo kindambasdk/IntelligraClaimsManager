@@ -1,0 +1,131 @@
+.admin-container {
+  background: #f8faff;
+  border-radius: 28px;
+  padding: 20px;
+  border: 1px solid #dfe8f2;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-header i {
+  font-size: 24px;
+  color: #1f4f8a;
+}
+
+.admin-header h3 {
+  font-size: 18px;
+  color: #0b2b4a;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: white;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #e6edf5;
+  text-align: center;
+}
+
+.stat-card i {
+  font-size: 24px;
+  color: #2a6fdb;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0b2b4a;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #586b86;
+  margin-top: 2px;
+}
+
+.admin-section {
+  margin: 20px 0;
+}
+
+.admin-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: #0b2b4a;
+  margin-bottom: 12px;
+}
+
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-item {
+  background: white;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid #e6edf5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #0b2b4a;
+  font-size: 15px;
+}
+
+.user-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.user-role {
+  color: #1f4f8a;
+  font-weight: 500;
+}
+
+.user-email {
+  color: #586b86;
+}
+
+.user-status {
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.user-status.active {
+  background: #d5f5e3;
+  color: #1a7a42;
+}
+
+.report-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 8px;
+}

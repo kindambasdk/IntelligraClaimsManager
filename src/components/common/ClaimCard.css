@@ -1,0 +1,260 @@
+/* src/components/common/ClaimCard.css */
+.claim-card {
+  background: white;
+  border-radius: 28px;
+  padding: 20px 22px;
+  box-shadow: 0 6px 18px rgba(0, 20, 40, 0.02);
+  border: 1px solid #e6edf5;
+  transition: all 0.2s;
+  margin-top: 12px;
+  animation: fadeSlide 0.3s ease;
+  position: relative;
+  max-width: 60%;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.claim-ref {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0b2b4a;
+  letter-spacing: -0.2px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0f4fa;
+  font-family: 'Courier New', monospace;
+}
+
+.claim-detail {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f4fa;
+  font-size: 14px;
+}
+
+.claim-detail:last-of-type {
+  border-bottom: none;
+}
+
+.claim-detail .label {
+  color: #586b86;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.claim-detail .value {
+  font-weight: 600;
+  color: #1a2b44;
+  text-align: right;
+  word-break: break-word;
+  max-width: 60%;
+}
+
+.claim-detail.care-badge-row .value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+  gap: 12px;
+  position: relative;
+}
+
+.btn-primary {
+  background: #1f4f8a;
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 40px;
+  font-weight: 600;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: 0.15s;
+  border: 1px solid #17417a;
+}
+
+.btn-primary i {
+  font-size: 14px;
+}
+
+.btn-primary:hover {
+  background: #123b69;
+  transform: scale(0.97);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #cbd7e6;
+  color: #1f3a5e;
+  padding: 10px 18px;
+  border-radius: 40px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.btn-outline:hover {
+  background: #f0f5fe;
+}
+
+/* Popup Dropdown Styles */
+.popup-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  min-width: 240px;
+  animation: popupSlideDown 0.25s ease;
+}
+
+@keyframes popupSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.popup-dropdown-content {
+  background: white;
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e6edf5;
+}
+
+.popup-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: #0b2b4a;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.popup-option-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #e6edf5;
+  background: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.15s;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.popup-option-btn:last-of-type {
+  margin-bottom: 0;
+}
+
+.popup-option-btn i {
+  font-size: 16px;
+  color: #2a6fdb;
+  width: 20px;
+}
+
+.popup-option-btn:hover {
+  background: #eaf1fc;
+  border-color: #2a6fdb;
+  transform: translateX(4px);
+}
+
+.popup-timer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f4fa;
+}
+
+.popup-progress-bar {
+  width: 100%;
+  height: 3px;
+  background: #e6edf5;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.popup-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2a6fdb, #1f4f8a);
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+
+.popup-timer-text {
+  font-size: 11px;
+  color: #8a9bb0;
+  display: block;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .claim-card {
+    max-width: 70%;
+  }
+}
+
+@media (max-width: 768px) {
+  .claim-card {
+    max-width: 90%;
+    padding: 16px;
+  }
+  
+  .claim-detail {
+    flex-direction: column;
+    padding: 4px 0;
+  }
+  
+  .claim-detail .label {
+    min-width: auto;
+    font-size: 12px;
+  }
+  
+  .claim-detail .value {
+    text-align: left;
+    max-width: 100%;
+    font-size: 13px;
+  }
+  
+  .popup-dropdown {
+    min-width: 200px;
+    right: -10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .claim-card {
+    max-width: 100%;
+    padding: 14px;
+  }
+}

@@ -1,0 +1,73 @@
+/* src/components/common/PopupOptions.css */
+.popup-container {
+  animation: fadeSlide 0.3s ease;
+  max-width: 60%;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.popup-title {
+  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: #0b2b4a;
+}
+
+.popup-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0 8px;
+}
+
+.popup-btn {
+  padding: 14px;
+  border-radius: 60px;
+  border: 1px solid #d4e0ee;
+  background: white;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.15s;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.popup-btn i {
+  font-size: 18px;
+  color: #2a6fdb;
+}
+
+.popup-btn:hover {
+  background: #eaf1fc;
+  border-color: #2a6fdb;
+}
+
+.helper-text {
+  font-size: 13px;
+  color: #586b86;
+  margin-top: 12px;
+  text-align: center;
+}
+
+@media (max-width: 1024px) {
+  .popup-container {
+    max-width: 70%;
+  }
+}
+
+@media (max-width: 768px) {
+  .popup-container {
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  .popup-container {
+    max-width: 100%;
+  }
+}

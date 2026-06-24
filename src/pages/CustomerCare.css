@@ -1,0 +1,123 @@
+/* src/pages/CustomerCare.css */
+.care-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.care-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  max-width: 80%;
+}
+
+.care-header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.care-header-content i {
+  font-size: 24px;
+  color: #1f4f8a;
+}
+
+.care-header-content h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0b2b4a;
+}
+
+.care-header-content .subtitle {
+  font-size: 14px;
+  color: #586b86;
+  font-weight: 400;
+  margin-left: 8px;
+}
+
+.care-badge {
+  background: #fef2e0;
+  color: #e67e22;
+  padding: 6px 16px;
+  border-radius: 40px;
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.care-badge i {
+  font-size: 14px;
+}
+
+.care-content {
+  width: 100%;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.care-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.care-content::-webkit-scrollbar-track {
+  background: #f0f4fa;
+  border-radius: 10px;
+}
+
+.care-content::-webkit-scrollbar-thumb {
+  background: #cbd7e6;
+  border-radius: 10px;
+}
+
+.care-content::-webkit-scrollbar-thumb:hover {
+  background: #2a6fdb;
+}
+
+.step-transition {
+  animation: stepFade 0.3s ease;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+@keyframes stepFade {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .care-header {
+    max-width: 80%;
+  }
+}
+
+@media (max-width: 768px) {
+  .care-header {
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  .care-header {
+    max-width: 100%;
+  }
+}

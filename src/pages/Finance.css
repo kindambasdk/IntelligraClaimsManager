@@ -1,0 +1,87 @@
+.finance-container {
+  background: #f8faff;
+  border-radius: 28px;
+  padding: 20px;
+  border: 1px solid #dfe8f2;
+}
+
+.finance-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.finance-header i {
+  font-size: 24px;
+  color: #1f4f8a;
+}
+
+.finance-header h3 {
+  font-size: 18px;
+  color: #0b2b4a;
+}
+
+.finance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.finance-item {
+  background: white;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid #e6edf5;
+}
+
+.finance-detail {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f4fa;
+  font-size: 14px;
+}
+
+.finance-detail:last-of-type {
+  border-bottom: none;
+}
+
+.finance-detail .label {
+  color: #586b86;
+  font-weight: 500;
+}
+
+.finance-detail .value {
+  font-weight: 600;
+  color: #1a2b44;
+}
+
+.finance-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.finance-actions button {
+  flex: 1;
+  justify-content: center;
+}
+
+.verify-btn {
+  background: #27ae60;
+  border-color: #219a52;
+}
+
+.verify-btn:hover {
+  background: #1e8449;
+}
+
+.reject-btn {
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.reject-btn:hover {
+  background: #fde8e8;
+}
