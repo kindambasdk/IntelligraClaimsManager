@@ -369,8 +369,8 @@ const Representative = () => {
     <div className="representative-page">
       <div className="rep-header">
         <div className="rep-header-content">
-          <i className="fas fa-headset"></i>
-          <h2>Claim Management <span className="subtitle">Representative</span></h2>
+          
+          <h2>Claim Management</h2>
         </div>
       </div>
       

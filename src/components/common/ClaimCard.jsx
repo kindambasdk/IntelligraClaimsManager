@@ -103,15 +103,7 @@ const ClaimCard = ({ claim, representative, onAddPayment, onOptionSelect, popupV
         <span className="value">{rep}</span>
       </div>
       
-      {isCare && (
-        <div className="claim-detail care-badge-row">
-          <span className="label">Role</span>
-          <span className="value" style={{ color: '#e67e22' }}>
-            <i className="fas fa-tools"></i> Repair Only
-          </span>
-        </div>
-      )}
-      
+    
       <div className="card-actions" style={{ position: 'relative' }}>
         <button 
           ref={buttonRef}
