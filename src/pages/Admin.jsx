@@ -1,5 +1,5 @@
 // src/pages/Admin.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth.js';
 import { useClaim } from '../hooks/useClaim.js';
 import { CLAIM_STATUS, CLAIM_STATUS_LABELS, CLAIM_TYPE } from '../constants/claimStatus.js';
@@ -37,7 +37,6 @@ const Admin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
   
   // State for report generation
   const [showReportModal, setShowReportModal] = useState(false);
@@ -224,7 +223,6 @@ const Admin = () => {
     setShowPassword(false);
     setNewPassword('');
     setConfirmNewPassword('');
-    setIsChangingPassword(false);
   };
 
   const handleChangePassword = () => {
@@ -255,7 +253,6 @@ const Admin = () => {
     setSelectedUser(null);
     setNewPassword('');
     setConfirmNewPassword('');
-    setIsChangingPassword(false);
   };
 
   const handleCopyPassword = (password) => {

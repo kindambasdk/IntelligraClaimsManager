@@ -1,12 +1,10 @@
 // src/pages/Finance.jsx
 import React, { useState } from 'react';
 import { useClaim } from '../hooks/useClaim.js';
-import { useAuth } from '../hooks/useAuth.js';
 import { CLAIM_TYPE } from '../constants/claimStatus.js';
 import './Finance.css';
 
 const Finance = () => {
-  const { user } = useAuth();
   const { claims } = useClaim();
   
   // ============================================================

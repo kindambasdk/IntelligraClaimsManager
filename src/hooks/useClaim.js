@@ -1,5 +1,5 @@
 // src/hooks/useClaim.js
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import ClaimContext from '../context/ClaimContext.jsx';
 
 /**

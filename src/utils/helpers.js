@@ -295,8 +295,7 @@ export const parseQueryString = (queryString) => {
   return result;
 };
 
-// Default export
-export default {
+const helpers = {
   extractDateFromTransactionId,
   isValidTransactionId,
   parseTransactionId,
@@ -316,3 +315,6 @@ export default {
   toQueryString,
   parseQueryString
 };
+
+// Default export
+export default helpers;

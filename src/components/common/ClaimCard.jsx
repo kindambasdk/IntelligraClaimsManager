@@ -71,6 +71,7 @@ const ClaimCard = ({ claim, representative, onAddPayment, onOptionSelect, popupV
   const popupOptions = isCare ? ['Repair'] : ['Replacement', 'Repair'];
 
   return (
+    <div className="search-sectionx">
     <div className="claim-card">
       <div className="claim-ref">{ref}</div>
       
@@ -98,10 +99,7 @@ const ClaimCard = ({ claim, representative, onAddPayment, onOptionSelect, popupV
         <span className="label">Program</span>
         <span className="value">{program}</span>
       </div>
-      <div className="claim-detail">
-        <span className="label">Agent</span>
-        <span className="value">{rep}</span>
-      </div>
+     
       
     
       <div className="card-actions" style={{ position: 'relative' }}>
@@ -126,7 +124,7 @@ const ClaimCard = ({ claim, representative, onAddPayment, onOptionSelect, popupV
                   className="popup-option-btn" 
                   onClick={() => handleOptionClick(option)}
                 >
-                  <i className={`fas ${option === 'Replacement' ? 'fa-exchange-alt' : 'fa-tools'}`}></i>
+                  {/*<i className={`fas ${option === 'Replacement' ? 'fa-exchange-alt' : 'fa-tools'}`}></i>*/}
                   {option}
                 </button>
               ))}
@@ -143,7 +141,7 @@ const ClaimCard = ({ claim, representative, onAddPayment, onOptionSelect, popupV
           </div>
         )}
       </div>
-    </div>
+    </div></div>
   );
 };
 

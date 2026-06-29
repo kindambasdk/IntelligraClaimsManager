@@ -6,9 +6,7 @@ import { useAutoDismiss } from '../hooks/useTimer.js';
 import SearchBar from '../components/common/SearchBar.jsx';
 import ClaimCard from '../components/common/ClaimCard.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
-import ToggleGroup from '../components/common/ToggleGroup.jsx';
 import TransactionForm from '../components/common/TransactionForm.jsx';
-import RoleNav from '../components/navigation/RoleNav.jsx';
 import { STEP_TYPES } from '../constants/roles.js';
 import { CLAIM_STATUS, CLAIM_TYPE, CLAIM_SUBTYPE } from '../constants/claimStatus.js';
 import './Representative.css';
@@ -21,51 +19,38 @@ const Representative = () => {
     setCurrentClaim, 
     isLoading, 
     updateClaim,
-    submitToCare,
     completeTransaction,
     claims 
   } = useClaim();
   
   const [searchValue, setSearchValue] = useState('255685968876');
   const [step, setStep] = useState(STEP_TYPES.SEARCH);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [selectedType, setSelectedType] = useState(null);
+  const [selectedOption, setSelectedOption] = useState(null); // 'Replacement' or 'Repair'
 
+  // Transaction data state – all fields
   const [txData, setTxData] = useState({
-    primaryAmount: '',
-    primaryTxId: '',
+    faultDate: '',
     excessAmount: '',
-    excessTxId: '',
-    date: new Date().toLocaleDateString(),
-    rep: user?.name || 'Shabani'
+    txId: '',
+    additionalFeeAmount: '',
+    additionalFeeTxId: '',
+    date: '',
+    agentName: ''
   });
 
-  // Use auto-dismiss hook for popup
-  const { 
-    isVisible: isPopupVisible, 
-    show: showPopup, 
-    dismiss: dismissPopup,
-    progress: popupProgress 
-  } = useAutoDismiss(4000, () => {
-    // When popup auto-dismisses, close it
-  });
+  const { isVisible: isPopupVisible, show: showPopup, dismiss: dismissPopup, progress: popupProgress } = useAutoDismiss(4000);
 
   const handleSearch = async () => {
     if (!searchValue.trim()) return;
     try {
-      // Check if claim already exists in our claims
       let existingClaim = claims.find(c => c.msisdn === searchValue.trim());
-      
       if (existingClaim) {
         setCurrentClaim(existingClaim);
         setStep(STEP_TYPES.DETAILS);
         return;
       }
-
-      // If not found, fetch from API
       const data = await fetchClaim(searchValue.trim());
       if (data) {
-        // Initialize claim with representative
         const newClaim = {
           ...data,
           representative: user?.name || 'Shabani',
@@ -86,140 +71,106 @@ const Representative = () => {
   const handleOptionSelect = (option) => {
     dismissPopup();
     setSelectedOption(option);
-    setStep(STEP_TYPES.TOGGLE);
-  };
-
-  const handleTypeSelect = (type) => {
-    setSelectedType(type);
-    
-    // Update claim with type and subtype
     if (currentClaim) {
-      updateClaim(currentClaim.id, {
-        claim_type: selectedOption,
-        claim_subtype: type,
-        representative: user?.name || 'Shabani'
-      });
+      updateClaim(currentClaim.id, { claim_type: option });
     }
-
-    // For Repair claims, send to Customer Care for price update
-    if (selectedOption === CLAIM_TYPE.REPAIR) {
-      if (currentClaim) {
-        submitToCare(currentClaim.id);
-      }
-      setStep(STEP_TYPES.PENDING);
-      alert('📤 Repair claim sent to Customer Care for price update.');
-    } else {
-      // For Replacement claims, go directly to transaction form
-      setStep(STEP_TYPES.TRANSACTION);
-    }
-  };
-
-  // Check if claim has been updated by Customer Care (has amount)
-  const checkCareUpdate = () => {
-    if (currentClaim && currentClaim.amount && currentClaim.amount > 0) {
-      return true;
-    }
-    return false;
+    setStep(STEP_TYPES.TRANSACTION);
   };
 
   const handleTxChange = (e) => {
     const { name, value } = e.target;
     setTxData(prev => ({ ...prev, [name]: value }));
+    if (name === 'txId' && value.length >= 8) {
+      const extracted = extractDateFromTxId(value);
+      if (extracted) {
+        setTxData(prev => ({ ...prev, date: extracted }));
+      }
+    }
+  };
+
+  const extractDateFromTxId = (txId) => {
+    const match = txId.match(/^[A-Z]{2}(\d{2})(\d{2})(\d{2})/);
+    if (match) {
+      const year = `20${match[1]}`;
+      const month = match[2];
+      const day = match[3];
+      const date = new Date(`${year}-${month}-${day}`);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+      }
+    }
+    return null;
   };
 
   const handleSubmitTx = () => {
-    // For Replacement with Excess
-    if (selectedOption === CLAIM_TYPE.REPLACEMENT && selectedType === CLAIM_SUBTYPE.EXCESS) {
-      if (!txData.primaryTxId) {
-        alert('Please enter the previous transaction ID');
-        return;
-      }
-      if (!txData.primaryAmount) {
-        alert('Please enter the previous transaction amount');
-        return;
-      }
-      if (!txData.excessTxId) {
-        alert('Please enter the top-up transaction ID');
-        return;
-      }
-      if (!txData.excessAmount) {
-        alert('Please enter the top-up amount');
-        return;
-      }
-
-      // Complete the transaction with both IDs
-      if (currentClaim) {
-        completeTransaction(currentClaim.id, {
-          primaryTxId: txData.primaryTxId,
-          primaryAmount: parseFloat(txData.primaryAmount),
-          excessTxId: txData.excessTxId,
-          excessAmount: parseFloat(txData.excessAmount),
-          date: txData.date,
-          screenshot: null,
-          isExcess: true
-        });
-      }
-    } 
-    // For Normal Replacement
-    else if (selectedOption === CLAIM_TYPE.REPLACEMENT && selectedType === CLAIM_SUBTYPE.NORMAL) {
-      if (!txData.primaryTxId) {
-        alert('Please enter a transaction ID');
-        return;
-      }
-      if (!txData.primaryAmount) {
-        alert('Please enter the transaction amount');
-        return;
-      }
-
-      if (currentClaim) {
-        completeTransaction(currentClaim.id, {
-          primaryTxId: txData.primaryTxId,
-          primaryAmount: parseFloat(txData.primaryAmount),
-          date: txData.date,
-          screenshot: null,
-          isExcess: false
-        });
-      }
+    // Validation
+    if (selectedOption === CLAIM_TYPE.REPLACEMENT) {
+      if (!txData.faultDate) { alert('Please select a fault date'); return; }
+      if (!txData.excessAmount || parseFloat(txData.excessAmount) < 0) { alert('Please enter a valid excess amount'); return; }
+      if (!txData.txId) { alert('Please enter a transaction ID'); return; }
+      if (txData.additionalFeeAmount && !txData.additionalFeeTxId) { alert('Please enter the additional fee transaction ID'); return; }
+      if (txData.additionalFeeTxId && !txData.additionalFeeAmount) { alert('Please enter the additional fee amount'); return; }
+    } else if (selectedOption === CLAIM_TYPE.REPAIR) {
+      if (!txData.txId) { alert('Please enter a transaction ID'); return; }
     }
-    // For Repair claims
-    else {
-      if (!txData.primaryTxId) {
-        alert('Please enter a transaction ID');
-        return;
-      }
+    if (!txData.agentName.trim()) { alert('Please enter your name (Agent)'); return; }
 
-      if (currentClaim) {
-        completeTransaction(currentClaim.id, {
-          primaryTxId: txData.primaryTxId,
-          date: txData.date,
-          screenshot: null,
-          isExcess: false
-        });
-      }
+    const transactionData = {
+      primaryTxId: txData.txId,
+      date: txData.date,
+      screenshot: null,
+      isExcess: false,
+      faultDate: selectedOption === CLAIM_TYPE.REPLACEMENT ? txData.faultDate : null,
+      excessAmount: parseFloat(txData.excessAmount) || 0,
+      additionalFeeAmount: txData.additionalFeeAmount ? parseFloat(txData.additionalFeeAmount) : null,
+      additionalFeeTxId: txData.additionalFeeTxId || null,
+      primaryAmount: parseFloat(txData.excessAmount) || 0,
+      agentName: txData.agentName.trim()
+    };
+
+    if (selectedOption === CLAIM_TYPE.REPLACEMENT && transactionData.excessAmount > 0) {
+      transactionData.isExcess = true;
     }
 
-    alert('✅ Claim submitted for Finance verification!');
+    if (currentClaim) {
+      const subtype = (selectedOption === CLAIM_TYPE.REPLACEMENT && transactionData.excessAmount > 0) 
+        ? CLAIM_SUBTYPE.EXCESS 
+        : CLAIM_SUBTYPE.NORMAL;
+      updateClaim(currentClaim.id, { claim_subtype: subtype });
+      completeTransaction(currentClaim.id, transactionData);
+    }
+
+    alert(`✅ ${selectedOption} claim submitted for verification!`);
     resetFlow();
   };
 
-  const handleCancel = () => {
-    resetFlow();
-  };
+  const handleCancel = () => resetFlow();
 
   const resetFlow = () => {
     setStep(STEP_TYPES.SEARCH);
     setCurrentClaim(null);
     setSelectedOption(null);
-    setSelectedType(null);
     setTxData({
-      primaryAmount: '',
-      primaryTxId: '',
+      faultDate: '',
       excessAmount: '',
-      excessTxId: '',
-      date: new Date().toLocaleDateString(),
-      rep: user?.name || 'Shabani'
+      txId: '',
+      additionalFeeAmount: '',
+      additionalFeeTxId: '',
+      date: '',
+      agentName: ''
     });
     dismissPopup();
+  };
+
+  const getPrefilledExcess = () => {
+    if (selectedOption === CLAIM_TYPE.REPAIR && currentClaim) {
+      return currentClaim.amount || currentClaim.excessAmount || '';
+    }
+    return '';
   };
 
   const renderContent = () => {
@@ -227,30 +178,15 @@ const Representative = () => {
       case STEP_TYPES.SEARCH:
         return (
           <>
-            <SearchBar
-              value={searchValue}
-              onChange={setSearchValue}
-              onSearch={handleSearch}
-              isLoading={isLoading}
-            />
-            <EmptyState 
-              icon="fa-search"
-              title="No claim loaded"
-              description="Search for a claim using phone number"
-            />
+            <SearchBar value={searchValue} onChange={setSearchValue} onSearch={handleSearch} isLoading={isLoading} />
+            <EmptyState icon="fa-search" title="No claim loaded" description="Search for a claim using phone number" />
           </>
         );
-      
       case STEP_TYPES.DETAILS:
         return (
           <>
-            <SearchBar
-              value={searchValue}
-              onChange={setSearchValue}
-              onSearch={handleSearch}
-              isLoading={isLoading}
-            />
-            <ClaimCard 
+            <SearchBar value={searchValue} onChange={setSearchValue} onSearch={handleSearch} isLoading={isLoading} />
+            <ClaimCard
               claim={currentClaim}
               representative={user?.name || 'Shabani'}
               onAddPayment={handleAddPayment}
@@ -260,106 +196,22 @@ const Representative = () => {
             />
           </>
         );
-      
-      case STEP_TYPES.TOGGLE:
-        return (
-          <>
-            <SearchBar
-              value={searchValue}
-              onChange={setSearchValue}
-              onSearch={handleSearch}
-              isLoading={isLoading}
-            />
-            <ToggleGroup 
-              selected={selectedType}
-              onSelect={handleTypeSelect}
-              title={selectedOption}
-            />
-          </>
-        );
-      
       case STEP_TYPES.TRANSACTION:
+        const isRepair = selectedOption === CLAIM_TYPE.REPAIR;
         return (
           <>
-            <SearchBar
-              value={searchValue}
-              onChange={setSearchValue}
-              onSearch={handleSearch}
-              isLoading={isLoading}
-            />
-            <TransactionForm 
-              title={`${selectedOption} · ${selectedType}`}
-              isReplacement={selectedOption === CLAIM_TYPE.REPLACEMENT}
-              isExcess={selectedType === CLAIM_SUBTYPE.EXCESS}
+            <SearchBar value={searchValue} onChange={setSearchValue} onSearch={handleSearch} isLoading={isLoading} />
+            <TransactionForm
+              isRepair={isRepair}
               txData={txData}
               onChange={handleTxChange}
               onSubmit={handleSubmitTx}
               onCancel={handleCancel}
-              representative={user?.name || 'Shabani'}
-              isPending={false}
+              prefilledExcessAmount={isRepair ? getPrefilledExcess() : ''}
+              title={isRepair ? 'Add Payment Details (Repair)' : 'Add Payment Details (Replacement)'}
             />
           </>
         );
-      
-      case STEP_TYPES.PENDING:
-        return (
-          <>
-            <SearchBar
-              value={searchValue}
-              onChange={setSearchValue}
-              onSearch={handleSearch}
-              isLoading={isLoading}
-            />
-            <div className="pending-card">
-              <div className="pending-icon">
-                <i className="fas fa-clock"></i>
-              </div>
-              <h3>Awaiting Customer Care</h3>
-              <p>The repair claim has been sent to Customer Care for price update.</p>
-              <p className="pending-detail">
-                <strong>Claim:</strong> {currentClaim?.covernoteRefNumber}
-              </p>
-              <p className="pending-detail">
-                <strong>Customer:</strong> {currentClaim?.customerName || 'Unknown'}
-              </p>
-              <p className="pending-detail">
-                <strong>Type:</strong> {selectedOption} · {selectedType}
-              </p>
-              <p className="pending-detail">
-                <strong>Status:</strong> Waiting for price from hardware personnel
-              </p>
-              {checkCareUpdate() ? (
-                <div className="care-updated">
-                  <i className="fas fa-check-circle"></i>
-                  <p>Price updated by Customer Care: <strong>TZS {currentClaim?.amount?.toLocaleString()}</strong></p>
-                  <button 
-                    className="btn-primary" 
-                    onClick={() => {
-                      setTxData(prev => ({ 
-                        ...prev, 
-                        primaryAmount: currentClaim.amount 
-                      }));
-                      setStep(STEP_TYPES.TRANSACTION);
-                    }}
-                  >
-                    <i className="fas fa-arrow-right"></i> Add Transaction Details
-                  </button>
-                </div>
-              ) : (
-                <button className="btn-outline" onClick={() => {
-                  // Refresh check
-                  const updatedClaim = claims.find(c => c.id === currentClaim?.id);
-                  if (updatedClaim && updatedClaim.amount) {
-                    setCurrentClaim(updatedClaim);
-                  }
-                }}>
-                  <i className="fas fa-sync"></i> Check for Updates
-                </button>
-              )}
-            </div>
-          </>
-        );
-      
       default:
         return null;
     }
@@ -369,16 +221,11 @@ const Representative = () => {
     <div className="representative-page">
       <div className="rep-header">
         <div className="rep-header-content">
-          
-          <h2>Claim Management</h2>
+         
+          <h2>Claim Management <span className="subtitle">Representative</span></h2>
         </div>
       </div>
-      
-
-      
-      <div className="rep-content step-transition">
-        {renderContent()}
-      </div>
+      <div className="rep-content step-transition">{renderContent()}</div>
     </div>
   );
 };

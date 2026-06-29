@@ -1,6 +1,6 @@
 // src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ClaimProvider } from './context/ClaimContext.jsx';
 import { useAuth } from './hooks/useAuth.js';

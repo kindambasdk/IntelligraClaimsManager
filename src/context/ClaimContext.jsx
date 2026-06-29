@@ -232,37 +232,36 @@ export function ClaimProvider({ children }) {
     });
   };
 
-  // Complete transaction - handles all types (Normal/Excess, Replacement/Repair)
-  const completeTransaction = (id, transactionData) => {
-    const updates = {
-      transaction_id: transactionData.primaryTxId,
-      transaction_date: transactionData.date,
-      screenshot: null,
-      status: CLAIM_STATUS.READY_VERIFY,
-      primary_amount: transactionData.primaryAmount,
-      amount: transactionData.primaryAmount,
-      total_amount: transactionData.primaryAmount
-    };
-
-    // Check if optional/excess fields exist
-    const hasExcess = transactionData.isExcess && 
-                      transactionData.excessAmount && 
-                      transactionData.excessAmount > 0 &&
-                      transactionData.excessTxId;
-
-    if (hasExcess) {
-      updates.excess_amount = transactionData.excessAmount;
-      updates.excess_tx_id = transactionData.excessTxId;
-      updates.total_amount = transactionData.primaryAmount + transactionData.excessAmount;
-      updates.amount = updates.total_amount;
-    } else {
-      updates.excess_amount = null;
-      updates.excess_tx_id = null;
-    }
-
-    updateClaim(id, updates);
+ // Inside ClaimContext.jsx, update completeTransaction:
+const completeTransaction = (id, transactionData) => {
+  const updates = {
+    transaction_id: transactionData.primaryTxId,
+    transaction_date: transactionData.date,
+    screenshot: null,
+    status: CLAIM_STATUS.READY_VERIFY,
+    primary_amount: transactionData.primaryAmount || transactionData.excessAmount || 0,
+    amount: transactionData.primaryAmount || transactionData.excessAmount || 0,
+    total_amount: transactionData.primaryAmount || transactionData.excessAmount || 0
   };
 
+  // Handle replacement-specific fields
+  if (transactionData.faultDate) {
+    updates.fault_date = transactionData.faultDate;
+  }
+  if (transactionData.additionalFeeAmount) {
+    updates.additional_fee_amount = transactionData.additionalFeeAmount;
+    updates.additional_fee_tx_id = transactionData.additionalFeeTxId;
+    updates.total_amount = (parseFloat(updates.amount) || 0) + parseFloat(transactionData.additionalFeeAmount);
+  }
+
+  // If excess (excessAmount > 0), mark as excess
+  if (transactionData.excessAmount > 0) {
+    updates.is_excess = true;
+    updates.excess_amount = transactionData.excessAmount;
+  }
+
+  updateClaim(id, updates);
+};
   // Finance verifies the claim
   const verifyClaim = (id) => {
     updateClaim(id, { status: CLAIM_STATUS.VERIFIED });
