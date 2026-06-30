@@ -1,7 +1,8 @@
 // src/pages/Admin.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.js';
 import { useClaim } from '../hooks/useClaim.js';
+import api from '../services/api';
 import { CLAIM_STATUS, CLAIM_STATUS_LABELS, CLAIM_TYPE } from '../constants/claimStatus.js';
 import './Admin.css';
 
@@ -9,13 +10,13 @@ const Admin = () => {
   const { user } = useAuth();
   const { claims } = useClaim();
   
-  // State for users management
+  // State for users management (local – no backend API for listing users)
   const [users, setUsers] = useState([
-    { id: 1, username: 'shabani', fullName: 'Shabani', email: 'shabani@intelligra.io', role: 'rep', status: 'active', password: 'password123', lastLogin: '2026-06-24 14:30:00' },
-    { id: 2, username: 'peter', fullName: 'Peter', email: 'peter@intelligra.io', role: 'rep', status: 'active', password: 'password123', lastLogin: '2026-06-24 13:15:00' },
-    { id: 3, username: 'grace', fullName: 'Grace', email: 'grace@intelligra.io', role: 'care', status: 'active', password: 'password123', lastLogin: '2026-06-24 12:00:00' },
-    { id: 4, username: 'john', fullName: 'John', email: 'john@intelligra.io', role: 'finance', status: 'active', password: 'password123', lastLogin: '2026-06-24 11:30:00' },
-    { id: 5, username: 'admin', fullName: 'System Admin', email: 'admin@intelligra.io', role: 'admin', status: 'active', password: 'password123', lastLogin: '2026-06-24 10:00:00' },
+    // We'll keep these as default, but they can be updated via registration
+    { id: 1, username: 'admin', fullName: 'System Admin', email: 'admin@intelligra.io', role: 'admin', status: 'active', password: 'Admin@123', lastLogin: '2026-06-30 10:00:00' },
+    { id: 2, username: 'agent1', fullName: 'John Agent', email: 'john@intelligra.io', role: 'rep', status: 'active', password: 'Admin@123', lastLogin: '2026-06-30 09:30:00' },
+    { id: 3, username: 'care1', fullName: 'Sarah Care', email: 'sarah@intelligra.io', role: 'care', status: 'active', password: 'Admin@123', lastLogin: '2026-06-30 09:00:00' },
+    { id: 4, username: 'finance1', fullName: 'Peter Finance', email: 'peter@intelligra.io', role: 'finance', status: 'active', password: 'Admin@123', lastLogin: '2026-06-29 16:30:00' },
   ]);
   
   // State for user form
@@ -50,8 +51,27 @@ const Admin = () => {
   // State for search/filter
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  
+  // State for finance stats (dashboard)
+  const [financeStats, setFinanceStats] = useState(null);
+  
+  // State for report data
+  const [reportData, setReportData] = useState([]);
+  
+  // Fetch finance stats on mount
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await api.getDashboardStats();
+        setFinanceStats(res.data);
+      } catch (error) {
+        console.error('Failed to fetch finance stats:', error);
+      }
+    };
+    fetchStats();
+  }, []);
 
-  // Get claim statistics
+  // Claim statistics (derived from local claims from context)
   const getClaimStats = () => {
     const total = claims.length;
     const pending = claims.filter(c => c.status === CLAIM_STATUS.PENDING || c.status === 'PENDING').length;
@@ -97,7 +117,7 @@ const Admin = () => {
     return matchesSearch && matchesRole;
   });
 
-  // User CRUD operations
+  // User CRUD operations (some are local, registration uses API)
   const handleAddUser = () => {
     setEditingUser(null);
     setUserFormData({
@@ -138,14 +158,14 @@ const Admin = () => {
     }
   };
 
-  const handleSaveUser = () => {
+  const handleSaveUser = async () => {
     // Validate form
     if (!userFormData.username || !userFormData.fullName || !userFormData.email) {
       alert('Please fill in all required fields');
       return;
     }
     
-    // Check for duplicate username
+    // Check for duplicate username (local)
     const existingUser = users.find(u => 
       u.username === userFormData.username && 
       (!editingUser || u.id !== editingUser.id)
@@ -168,7 +188,7 @@ const Admin = () => {
     }
     
     if (editingUser) {
-      // Edit existing user
+      // Edit existing user (local only)
       const updateData = {
         username: userFormData.username,
         fullName: userFormData.fullName,
@@ -176,12 +196,9 @@ const Admin = () => {
         role: userFormData.role,
         status: userFormData.status
       };
-      
-      // Only update password if provided
       if (userFormData.password) {
         updateData.password = userFormData.password;
       }
-      
       setUsers(users.map(u => 
         u.id === editingUser.id 
           ? { ...u, ...updateData } 
@@ -189,19 +206,33 @@ const Admin = () => {
       ));
       alert('User updated successfully!');
     } else {
-      // Add new user
-      const newUser = {
-        id: Date.now(),
-        username: userFormData.username,
-        fullName: userFormData.fullName,
-        email: userFormData.email,
-        role: userFormData.role,
-        status: userFormData.status,
-        password: userFormData.password,
-        lastLogin: 'Never'
-      };
-      setUsers([...users, newUser]);
-      alert(`User added successfully!\nPassword: ${userFormData.password}`);
+      // Add new user – call register API
+      try {
+        const registerData = {
+          username: userFormData.username,
+          password: userFormData.password,
+          fullName: userFormData.fullName,
+          email: userFormData.email,
+          role: userFormData.role
+        };
+        await api.register(registerData);
+        // Add to local list
+        const newUser = {
+          id: Date.now(),
+          username: userFormData.username,
+          fullName: userFormData.fullName,
+          email: userFormData.email,
+          role: userFormData.role,
+          status: userFormData.status,
+          password: userFormData.password,
+          lastLogin: 'Never'
+        };
+        setUsers([...users, newUser]);
+        alert(`User added successfully!\nPassword: ${userFormData.password}`);
+      } catch (error) {
+        alert('Error adding user: ' + error.message);
+        return;
+      }
     }
     
     setShowUserModal(false);
@@ -216,7 +247,7 @@ const Admin = () => {
     ));
   };
 
-  // Password management
+  // Password management (local)
   const handleViewPassword = (user) => {
     setSelectedUser(user);
     setShowPasswordModal(true);
@@ -230,24 +261,20 @@ const Admin = () => {
       alert('Please enter a new password');
       return;
     }
-    
     if (newPassword.length < 3) {
       alert('Password must be at least 3 characters');
       return;
     }
-    
     if (newPassword !== confirmNewPassword) {
       alert('Passwords do not match!');
       return;
     }
-    
-    // Update password
+    // Update locally (no API for this)
     setUsers(users.map(u => 
       u.id === selectedUser.id 
         ? { ...u, password: newPassword } 
         : u
     ));
-    
     alert('Password updated successfully!');
     setShowPasswordModal(false);
     setSelectedUser(null);
@@ -259,7 +286,6 @@ const Admin = () => {
     navigator.clipboard.writeText(password).then(() => {
       alert('Password copied to clipboard!');
     }).catch(() => {
-      // Fallback for older browsers
       const textarea = document.createElement('textarea');
       textarea.value = password;
       document.body.appendChild(textarea);
@@ -270,84 +296,101 @@ const Admin = () => {
     });
   };
 
-  // Report generation
+  // Report generation (using finance report API)
   const handleGenerateReport = () => {
     setShowReportModal(true);
   };
 
-  const handleExportReport = () => {
+  const handleExportReport = async () => {
     setIsGenerating(true);
-    
-    setTimeout(() => {
-      let csvData = [];
+    try {
+      // Fetch report data from finance API (we'll use the current date range or all)
+      let start = '';
+      let end = '';
+      if (reportPeriod === 'daily') {
+        const today = new Date().toISOString().slice(0,10);
+        start = today;
+        end = today;
+      } else if (reportPeriod === 'weekly') {
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        start = startOfWeek.toISOString().slice(0,10);
+        end = now.toISOString().slice(0,10);
+      } else if (reportPeriod === 'monthly') {
+        const now = new Date();
+        start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+        end = now.toISOString().slice(0,10);
+      } else if (reportPeriod === 'quarterly') {
+        const now = new Date();
+        const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
+        start = new Date(now.getFullYear(), quarterMonth, 1).toISOString().slice(0,10);
+        end = now.toISOString().slice(0,10);
+      } else if (reportPeriod === 'yearly') {
+        const now = new Date();
+        start = new Date(now.getFullYear(), 0, 1).toISOString().slice(0,10);
+        end = now.toISOString().slice(0,10);
+      } else {
+        // all time – send empty dates
+        start = '';
+        end = '';
+      }
+      
+      const res = await api.getReport(start, end);
+      const data = res.data || [];
+      setReportData(data);
       
       if (reportFormat === 'csv') {
-        const headers = ['Cover Note', 'Customer', 'Phone', 'IMEI', 'Model', 'Type', 'Status', 'Amount', 'Date'];
-        csvData.push(headers.join(','));
-        
-        claims.forEach(claim => {
-          const row = [
-            claim.covernoteRefNumber || 'N/A',
-            claim.customerName || 'N/A',
-            claim.msisdn || 'N/A',
-            claim.imeiNumber || 'N/A',
-            claim.model || 'N/A',
-            `${claim.claim_type || 'N/A'} - ${claim.claim_subtype || 'N/A'}`,
-            CLAIM_STATUS_LABELS[claim.status] || claim.status || 'N/A',
-            claim.total_amount ? `TZS ${claim.total_amount}` : 'N/A',
-            claim.transaction_date || claim.insuranceClaimDate || 'N/A'
-          ];
-          csvData.push(row.join(','));
-        });
-        
-        const csvString = csvData.join('\n');
-        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
+        const headers = ['MSISDN', 'Customer', 'Payment Type', 'Excess Amount', 'Status', 'Agent'];
+        const rows = data.map(item => [
+          item.msisdn || 'N/A',
+          item.customerName || 'N/A',
+          item.paymentType || 'N/A',
+          item.excessAmount ? `"${item.excessAmount.toFixed(2)}"` : 'N/A',
+          item.paymentStatus || 'N/A',
+          item.agentName || 'N/A'
+        ]);
+        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
         link.href = url;
-        link.download = `claims_report_${new Date().toISOString().slice(0,10)}.csv`;
+        link.download = `claims_report_${reportPeriod}_${new Date().toISOString().slice(0,10)}.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+        alert('✅ CSV report downloaded successfully!');
       } else {
+        // JSON
         const jsonData = {
           generatedAt: new Date().toISOString(),
           period: reportPeriod,
-          totalClaims: claims.length,
-          claims: claims.map(claim => ({
-            coverNote: claim.covernoteRefNumber,
-            customer: claim.customerName,
-            phone: claim.msisdn,
-            imei: claim.imeiNumber,
-            model: claim.model,
-            type: claim.claim_type,
-            subtype: claim.claim_subtype,
-            status: claim.status,
-            amount: claim.total_amount,
-            date: claim.transaction_date || claim.insuranceClaimDate
-          }))
+          totalRecords: data.length,
+          records: data
         };
-        
         const jsonString = JSON.stringify(jsonData, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
-        const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
         link.href = url;
-        link.download = `claims_report_${new Date().toISOString().slice(0,10)}.json`;
+        link.download = `claims_report_${reportPeriod}_${new Date().toISOString().slice(0,10)}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+        alert('✅ JSON report downloaded successfully!');
       }
-      
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('❌ Error generating report: ' + error.message);
+    } finally {
       setIsGenerating(false);
       setShowReportModal(false);
-      alert('✅ Report downloaded successfully!');
-    }, 1500);
+    }
   };
 
-  // Get role badge class
+  // Role badge helpers
   const getRoleBadgeClass = (role) => {
     const classes = {
       'admin': 'role-admin',
@@ -358,7 +401,6 @@ const Admin = () => {
     return classes[role] || 'role-default';
   };
 
-  // Get role label
   const getRoleLabel = (role) => {
     const labels = {
       'admin': 'Administrator',
@@ -369,7 +411,6 @@ const Admin = () => {
     return labels[role] || role;
   };
 
-  // Get status badge class
   const getStatusBadgeClass = (status) => {
     return status === 'active' ? 'status-active' : 'status-inactive';
   };
@@ -412,56 +453,58 @@ const Admin = () => {
         </button>
       </div>
 
-      {/* Dashboard Tab - Same as before */}
+      {/* Dashboard Tab */}
       {activeTab === 'dashboard' && (
         <div className="admin-dashboard">
-          {/* Statistics Cards */}
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon total">
-                <i className="fas fa-file-invoice"></i>
+          {/* Finance Stats */}
+          {financeStats && (
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon total">
+                  <i className="fas fa-file-invoice"></i>
+                </div>
+                <div className="stat-number">{financeStats.monthlyTotal || 0}</div>
+                <div className="stat-label">Monthly Transactions</div>
               </div>
-              <div className="stat-number">{stats.total}</div>
-              <div className="stat-label">Total Claims</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon pending">
-                <i className="fas fa-clock"></i>
+              <div className="stat-card">
+                <div className="stat-icon verified">
+                  <i className="fas fa-check-circle"></i>
+                </div>
+                <div className="stat-number">{financeStats.completedTotal || 0}</div>
+                <div className="stat-label">Completed</div>
               </div>
-              <div className="stat-number">{stats.pending}</div>
-              <div className="stat-label">Pending</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon verified">
-                <i className="fas fa-check-circle"></i>
+              <div className="stat-card">
+                <div className="stat-icon total">
+                  <i className="fas fa-coins"></i>
+                </div>
+                <div className="stat-number">{financeStats.totalExcessCollected ? `TZS ${financeStats.totalExcessCollected.toFixed(2)}` : 'TZS 0'}</div>
+                <div className="stat-label">Total Excess</div>
               </div>
-              <div className="stat-number">{stats.verified}</div>
-              <div className="stat-label">Verified</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon completed">
-                <i className="fas fa-check-double"></i>
+              <div className="stat-card">
+                <div className="stat-icon pending">
+                  <i className="fas fa-clock"></i>
+                </div>
+                <div className="stat-number">{financeStats.pendingReplacements || 0}</div>
+                <div className="stat-label">Pending Replacements</div>
               </div>
-              <div className="stat-number">{stats.completed}</div>
-              <div className="stat-label">Completed</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon rejected">
-                <i className="fas fa-times-circle"></i>
+              <div className="stat-card">
+                <div className="stat-icon pending">
+                  <i className="fas fa-tools"></i>
+                </div>
+                <div className="stat-number">{financeStats.pendingScreenDamage || 0}</div>
+                <div className="stat-label">Pending Screen Damage</div>
               </div>
-              <div className="stat-number">{stats.rejected}</div>
-              <div className="stat-label">Rejected</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon rate">
-                <i className="fas fa-percentage"></i>
+              <div className="stat-card">
+                <div className="stat-icon rate">
+                  <i className="fas fa-percentage"></i>
+                </div>
+                <div className="stat-number">{stats.completionRate}%</div>
+                <div className="stat-label">Claim Completion Rate</div>
               </div>
-              <div className="stat-number">{stats.completionRate}%</div>
-              <div className="stat-label">Completion Rate</div>
             </div>
-          </div>
+          )}
 
-          {/* Claim Type Distribution */}
+          {/* Claim Type Distribution (from local claims) */}
           <div className="stats-row">
             <div className="stat-card-wide">
               <h4><i className="fas fa-tag"></i> Claim Types</h4>

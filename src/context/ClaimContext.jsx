@@ -1,320 +1,96 @@
 // src/context/ClaimContext.jsx
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { api } from '../services/api.js';
-import { CLAIM_STATUS, CLAIM_TYPE, CLAIM_SUBTYPE } from '../constants/claimStatus.js';
+import React, { createContext, useState, useContext } from 'react';
+import api from '../services/api';
+import { CLAIM_STATUS } from '../constants/claimStatus';
 
 const ClaimContext = createContext();
-
-// Initial mock claims
-const MOCK_CLAIMS = [
-  {
-    id: 1,
-    covernoteRefNumber: '162101-250904-920619',
-    msisdn: '255685968876',
-    customerName: 'ARAFA CHOPEKE',
-    imeiNumber: '359484731242890',
-    model: 'ITEL A90',
-    brand: 'ITEL',
-    policyCreatedDate: '2025-09-04 16:20',
-    rrp: 205000,
-    insuranceCoverPaidAmount: 7561,
-    insuranceClaimDate: '2026-04-23T11:28:54.918653',
-    program: 'crdb',
-    claim_type: CLAIM_TYPE.REPLACEMENT,
-    claim_subtype: CLAIM_SUBTYPE.NORMAL,
-    status: CLAIM_STATUS.VERIFIED,
-    representative: 'Shabani',
-    amount: 250000,
-    primary_amount: 250000,
-    excess_amount: null,
-    excess_tx_id: null,
-    total_amount: 250000,
-    transaction_id: 'MP260610.2000.X08195',
-    transaction_date: '06/10/2026',
-    screenshot: null
-  },
-  {
-    id: 2,
-    covernoteRefNumber: '162101-250904-920620',
-    msisdn: '255786120573',
-    customerName: 'AISHA JUMA',
-    imeiNumber: '359484731242891',
-    model: 'SAMSUNG A12',
-    brand: 'SAMSUNG',
-    policyCreatedDate: '2025-09-05 10:30',
-    rrp: 180000,
-    insuranceCoverPaidAmount: 6500,
-    insuranceClaimDate: '2026-04-24T14:30:00',
-    program: 'ttcl',
-    claim_type: CLAIM_TYPE.REPAIR,
-    claim_subtype: CLAIM_SUBTYPE.EXCESS,
-    status: CLAIM_STATUS.AWAITING_CARE,
-    representative: 'Shabani',
-    amount: null,
-    primary_amount: null,
-    excess_amount: null,
-    excess_tx_id: null,
-    total_amount: null,
-    transaction_id: null,
-    transaction_date: null,
-    screenshot: null
-  },
-  {
-    id: 3,
-    covernoteRefNumber: '162101-250904-920621',
-    msisdn: '255784567890',
-    customerName: 'JOHN DOE',
-    imeiNumber: '359484731242892',
-    model: 'IPHONE 12',
-    brand: 'APPLE',
-    policyCreatedDate: '2025-09-06 14:45',
-    rrp: 350000,
-    insuranceCoverPaidAmount: 12000,
-    insuranceClaimDate: '2026-04-25T09:15:00',
-    program: 'crdb',
-    claim_type: CLAIM_TYPE.REPLACEMENT,
-    claim_subtype: CLAIM_SUBTYPE.EXCESS,
-    status: CLAIM_STATUS.READY_VERIFY,
-    representative: 'Peter',
-    amount: 300000,
-    primary_amount: 250000,
-    excess_amount: 50000,
-    excess_tx_id: 'MP260611.3000.X08196',
-    total_amount: 300000,
-    transaction_id: 'MP260610.2000.X08195',
-    transaction_date: '06/10/2026',
-    screenshot: null
-  },
-  {
-    id: 4,
-    covernoteRefNumber: '162101-250904-920622',
-    msisdn: '255782345678',
-    customerName: 'SARAH MWANGI',
-    imeiNumber: '359484731242893',
-    model: 'TECNO SPARK 8',
-    brand: 'TECNO',
-    policyCreatedDate: '2025-09-07 08:15',
-    rrp: 150000,
-    insuranceCoverPaidAmount: 5000,
-    insuranceClaimDate: '2026-04-26T10:00:00',
-    program: 'ttcl',
-    claim_type: CLAIM_TYPE.REPAIR,
-    claim_subtype: CLAIM_SUBTYPE.NORMAL,
-    status: CLAIM_STATUS.READY_VERIFY,
-    representative: 'Grace',
-    amount: 150000,
-    primary_amount: 150000,
-    excess_amount: null,
-    excess_tx_id: null,
-    total_amount: 150000,
-    transaction_id: 'MP260612.4000.X08197',
-    transaction_date: '06/12/2026',
-    screenshot: null
-  }
-];
 
 export function ClaimProvider({ children }) {
   const [claims, setClaims] = useState([]);
   const [currentClaim, setCurrentClaim] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState({
-    status: null,
-    type: null,
-    search: ''
-  });
 
-  // Initialize with mock data
-  useEffect(() => {
-    setClaims(MOCK_CLAIMS);
-  }, []);
-
+  // Search customer from API
   const fetchClaim = async (msisdn) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Check if claim already exists in our claims
-      let existingClaim = claims.find(c => c.msisdn === msisdn);
-      
-      if (existingClaim) {
-        setCurrentClaim(existingClaim);
-        return existingClaim;
-      }
-
-      // Fetch from API
-      const response = await api.getClaimWithFallback(msisdn);
-      
-      // Extract data from the response
-      const data = response.data || {};
-      const rawResponse = response._raw || response;
-
-      // Create new claim with the extracted data
-      const newClaim = {
+      const res = await api.searchCustomer(msisdn);
+      const data = res.data;
+      // Transform to match frontend model
+      const claim = {
         id: Date.now(),
-        covernoteRefNumber: data.covernoteRefNumber || 'N/A',
-        msisdn: data.msisdn || msisdn,
-        customerName: data.customerName || 'Unknown',
-        imeiNumber: data.imeiNumber || 'N/A',
-        model: data.model || 'N/A',
-        brand: data.brand || 'N/A',
-        policyCreatedDate: data.policyCreatedDate || null,
-        rrp: data.rrp || 0,
-        insuranceCoverPaidAmount: data.insuranceCoverPaidAmount || 0,
-        insuranceClaimDate: data.insuranceClaimDate || null,
-        program: data.program || 'N/A',
-        claim_type: null,
-        claim_subtype: null,
+        covernoteRefNumber: data.covernoteRefNumber,
+        msisdn: data.msisdn,
+        customerName: data.customerName,
+        imeiNumber: data.imeiNumber,
+        model: data.model,
+        brand: data.brand,
+        policyCreatedDate: data.policyCreatedDate,
+        rrp: data.rrp,
+        insuranceCoverPaidAmount: data.insuranceCoverAmount,
+        insuranceClaimDate: data.insuranceClaimDate,
+        program: data.program,
         status: CLAIM_STATUS.PENDING,
         representative: null,
-        amount: null,
-        primary_amount: null,
-        excess_amount: null,
-        excess_tx_id: null,
-        total_amount: null,
-        transaction_id: null,
-        transaction_date: null,
-        screenshot: null,
-        _raw: rawResponse
+        // Additional fields will be filled later
       };
-      
-      setCurrentClaim(newClaim);
-      return newClaim;
-    } catch (error) {
-      console.error('Error fetching claim:', error);
-      setError(error.message);
-      throw error;
+      setCurrentClaim(claim);
+      // Optionally add to claims list (or keep separate)
+      setClaims(prev => [...prev, claim]);
+      return claim;
+    } catch (err) {
+      setError(err.message);
+      throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const addClaim = (claim) => {
-    const newClaim = {
-      ...claim,
-      id: Date.now(),
-      status: CLAIM_STATUS.PENDING
+  // Create replacement payment
+  const submitReplacement = async (claim, paymentData) => {
+    // paymentData: { excessTid, faultDate, agentName, topupTid?, topupAmount? }
+    const payload = {
+      msisdn: claim.msisdn,
+      excessTid: paymentData.excessTid,
+      faultDate: paymentData.faultDate,
+      agentName: paymentData.agentName,
+      ...(paymentData.topupTid && { topupTid: paymentData.topupTid }),
+      ...(paymentData.topupAmount && { topupAmount: paymentData.topupAmount })
     };
-    setClaims(prev => [...prev, newClaim]);
-    return newClaim;
+    const res = await api.createReplacementPayment(payload);
+    // Update claim status
+    updateClaim(claim.id, { status: 'completed' });
+    return res;
+  };
+
+  // Create screen damage payment
+  const submitScreenDamage = async (claim, paymentData) => {
+    const payload = {
+      msisdn: claim.msisdn,
+      insuranceClaimDate: claim.insuranceClaimDate,
+      excessTid: paymentData.excessTid,
+      faultDate: paymentData.faultDate,
+      agentName: paymentData.agentName
+    };
+    const res = await api.createScreenDamagePayment(payload);
+    updateClaim(claim.id, { status: 'completed' });
+    return res;
+  };
+
+  // Customer Care: add excess
+  const addExcess = async (msisdn, insuranceClaimDate, excessAmount, notes = '') => {
+    const payload = { msisdn, insuranceClaimDate, excessAmount, notes };
+    const res = await api.addScreenDamageExcess(payload);
+    return res;
   };
 
   const updateClaim = (id, updates) => {
-    setClaims(prev => prev.map(c => {
-      if (c.id === id) {
-        return { ...c, ...updates };
-      }
-      return c;
-    }));
-    
-    // Also update currentClaim if it matches
+    setClaims(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
     if (currentClaim && currentClaim.id === id) {
       setCurrentClaim(prev => ({ ...prev, ...updates }));
     }
-  };
-
-  const updateClaimStatus = (id, status) => {
-    updateClaim(id, { status });
-  };
-
-  // Representative submits claim to Customer Care for repair price
-  const submitToCare = (id) => {
-    updateClaim(id, { 
-      status: CLAIM_STATUS.AWAITING_CARE
-    });
-  };
-
-  // Customer Care updates the price for repair
-  const updateRepairPrice = (id, amount) => {
-    updateClaim(id, { 
-      amount: amount,
-      primary_amount: amount,
-      status: CLAIM_STATUS.AWAITING_REP 
-    });
-  };
-
- // Inside ClaimContext.jsx, update completeTransaction:
-const completeTransaction = (id, transactionData) => {
-  const updates = {
-    transaction_id: transactionData.primaryTxId,
-    transaction_date: transactionData.date,
-    screenshot: null,
-    status: CLAIM_STATUS.READY_VERIFY,
-    primary_amount: transactionData.primaryAmount || transactionData.excessAmount || 0,
-    amount: transactionData.primaryAmount || transactionData.excessAmount || 0,
-    total_amount: transactionData.primaryAmount || transactionData.excessAmount || 0
-  };
-
-  // Handle replacement-specific fields
-  if (transactionData.faultDate) {
-    updates.fault_date = transactionData.faultDate;
-  }
-  if (transactionData.additionalFeeAmount) {
-    updates.additional_fee_amount = transactionData.additionalFeeAmount;
-    updates.additional_fee_tx_id = transactionData.additionalFeeTxId;
-    updates.total_amount = (parseFloat(updates.amount) || 0) + parseFloat(transactionData.additionalFeeAmount);
-  }
-
-  // If excess (excessAmount > 0), mark as excess
-  if (transactionData.excessAmount > 0) {
-    updates.is_excess = true;
-    updates.excess_amount = transactionData.excessAmount;
-  }
-
-  updateClaim(id, updates);
-};
-  // Finance verifies the claim
-  const verifyClaim = (id) => {
-    updateClaim(id, { status: CLAIM_STATUS.VERIFIED });
-  };
-
-  // Finance rejects the claim
-  const rejectClaim = (id) => {
-    updateClaim(id, { status: CLAIM_STATUS.REJECTED });
-  };
-
-  // Get claims by status
-  const getClaimsByStatus = (status) => {
-    return claims.filter(c => c.status === status);
-  };
-
-  // Get claims awaiting customer care (repair price update needed)
-  const getAwaitingCareClaims = () => {
-    return claims.filter(c => c.status === CLAIM_STATUS.AWAITING_CARE && c.claim_type === CLAIM_TYPE.REPAIR);
-  };
-
-  // Get claims awaiting representative (price updated, needs transaction details)
-  const getAwaitingRepClaims = () => {
-    return claims.filter(c => c.status === CLAIM_STATUS.AWAITING_REP);
-  };
-
-  // Get claims ready for finance verification
-  const getReadyVerifyClaims = () => {
-    return claims.filter(c => c.status === CLAIM_STATUS.READY_VERIFY);
-  };
-
-  // Get verified claims
-  const getVerifiedClaims = () => {
-    return claims.filter(c => c.status === CLAIM_STATUS.VERIFIED);
-  };
-
-  // Get rejected claims
-  const getRejectedClaims = () => {
-    return claims.filter(c => c.status === CLAIM_STATUS.REJECTED);
-  };
-
-  // Get excess replacement claims
-  const getExcessClaims = () => {
-    return claims.filter(c => c.claim_type === CLAIM_TYPE.REPLACEMENT && c.claim_subtype === CLAIM_SUBTYPE.EXCESS);
-  };
-
-  // Get claims by type
-  const getClaimsByType = (type) => {
-    return claims.filter(c => c.claim_type === type);
-  };
-
-  // Get claims by subtype
-  const getClaimsBySubtype = (subtype) => {
-    return claims.filter(c => c.claim_subtype === subtype);
   };
 
   const clearCurrentClaim = () => {
@@ -327,28 +103,13 @@ const completeTransaction = (id, transactionData) => {
     currentClaim,
     isLoading,
     error,
-    filter,
-    setFilter,
     fetchClaim,
-    addClaim,
+    submitReplacement,
+    submitScreenDamage,
+    addExcess,
     updateClaim,
-    updateClaimStatus,
-    submitToCare,
-    updateRepairPrice,
-    completeTransaction,
-    verifyClaim,
-    rejectClaim,
-    getClaimsByStatus,
-    getAwaitingCareClaims,
-    getAwaitingRepClaims,
-    getReadyVerifyClaims,
-    getVerifiedClaims,
-    getRejectedClaims,
-    getExcessClaims,
-    getClaimsByType,
-    getClaimsBySubtype,
-    setCurrentClaim,
-    clearCurrentClaim
+    clearCurrentClaim,
+    setCurrentClaim
   };
 
   return (
@@ -358,12 +119,8 @@ const completeTransaction = (id, transactionData) => {
   );
 }
 
-export function useClaimContext() {
-  const context = useContext(ClaimContext);
-  if (!context) {
-    throw new Error('useClaimContext must be used within a ClaimProvider');
-  }
-  return context;
+export function useClaim() {
+  return useContext(ClaimContext);
 }
 
 export default ClaimContext;

@@ -13,28 +13,28 @@ import './Representative.css';
 
 const Representative = () => {
   const { user } = useAuth();
-  const { 
-    currentClaim, 
-    fetchClaim, 
-    setCurrentClaim, 
-    isLoading, 
+  const {
+    currentClaim,
+    fetchClaim,
+    setCurrentClaim,
+    isLoading,
     updateClaim,
-    completeTransaction,
-    claims 
+    submitReplacement,
+    submitScreenDamage,
+    claims
   } = useClaim();
-  
+
   const [searchValue, setSearchValue] = useState('255685968876');
   const [step, setStep] = useState(STEP_TYPES.SEARCH);
   const [selectedOption, setSelectedOption] = useState(null); // 'Replacement' or 'Repair'
 
-  // Transaction data state – all fields
+  // Transaction data – fields required by the API
   const [txData, setTxData] = useState({
     faultDate: '',
-    excessAmount: '',
-    txId: '',
-    additionalFeeAmount: '',
-    additionalFeeTxId: '',
-    date: '',
+    txId: '',               // excessTid
+    additionalFeeAmount: '', // topupAmount (optional)
+    additionalFeeTxId: '',   // topupTid (optional)
+    date: '',               // auto‑extracted from txId
     agentName: ''
   });
 
@@ -80,6 +80,7 @@ const Representative = () => {
   const handleTxChange = (e) => {
     const { name, value } = e.target;
     setTxData(prev => ({ ...prev, [name]: value }));
+    // Auto‑extract date from main transaction ID
     if (name === 'txId' && value.length >= 8) {
       const extracted = extractDateFromTxId(value);
       if (extracted) {
@@ -106,46 +107,70 @@ const Representative = () => {
     return null;
   };
 
-  const handleSubmitTx = () => {
-    // Validation
-    if (selectedOption === CLAIM_TYPE.REPLACEMENT) {
-      if (!txData.faultDate) { alert('Please select a fault date'); return; }
-      if (!txData.excessAmount || parseFloat(txData.excessAmount) < 0) { alert('Please enter a valid excess amount'); return; }
-      if (!txData.txId) { alert('Please enter a transaction ID'); return; }
-      if (txData.additionalFeeAmount && !txData.additionalFeeTxId) { alert('Please enter the additional fee transaction ID'); return; }
-      if (txData.additionalFeeTxId && !txData.additionalFeeAmount) { alert('Please enter the additional fee amount'); return; }
-    } else if (selectedOption === CLAIM_TYPE.REPAIR) {
-      if (!txData.txId) { alert('Please enter a transaction ID'); return; }
+  const handleSubmitTx = async () => {
+    // Common validations
+    if (!txData.faultDate) {
+      alert('Please select a fault date');
+      return;
     }
-    if (!txData.agentName.trim()) { alert('Please enter your name (Agent)'); return; }
+    if (!txData.txId) {
+      alert('Please enter a transaction ID');
+      return;
+    }
+    if (!txData.agentName.trim()) {
+      alert('Please enter your name (Agent)');
+      return;
+    }
 
-    const transactionData = {
-      primaryTxId: txData.txId,
-      date: txData.date,
-      screenshot: null,
-      isExcess: false,
-      faultDate: selectedOption === CLAIM_TYPE.REPLACEMENT ? txData.faultDate : null,
-      excessAmount: parseFloat(txData.excessAmount) || 0,
-      additionalFeeAmount: txData.additionalFeeAmount ? parseFloat(txData.additionalFeeAmount) : null,
-      additionalFeeTxId: txData.additionalFeeTxId || null,
-      primaryAmount: parseFloat(txData.excessAmount) || 0,
+    // For replacement, validate optional top‑up fields
+    if (selectedOption === CLAIM_TYPE.REPLACEMENT) {
+      if (txData.additionalFeeAmount && !txData.additionalFeeTxId) {
+        alert('Please enter the top‑up transaction ID');
+        return;
+      }
+      if (txData.additionalFeeTxId && !txData.additionalFeeAmount) {
+        alert('Please enter the top‑up amount');
+        return;
+      }
+    }
+
+    // Build payload
+    const payload = {
+      msisdn: currentClaim.msisdn,
+      excessTid: txData.txId,
+      faultDate: txData.faultDate,
       agentName: txData.agentName.trim()
     };
 
-    if (selectedOption === CLAIM_TYPE.REPLACEMENT && transactionData.excessAmount > 0) {
-      transactionData.isExcess = true;
+    // Add optional top‑up fields only for replacement
+    if (selectedOption === CLAIM_TYPE.REPLACEMENT) {
+      if (txData.additionalFeeAmount && txData.additionalFeeTxId) {
+        payload.topupTid = txData.additionalFeeTxId;
+        payload.topupAmount = parseFloat(txData.additionalFeeAmount);
+      }
     }
 
-    if (currentClaim) {
-      const subtype = (selectedOption === CLAIM_TYPE.REPLACEMENT && transactionData.excessAmount > 0) 
-        ? CLAIM_SUBTYPE.EXCESS 
-        : CLAIM_SUBTYPE.NORMAL;
-      updateClaim(currentClaim.id, { claim_subtype: subtype });
-      completeTransaction(currentClaim.id, transactionData);
+    // For repair, we need insuranceClaimDate (already in claim)
+    if (selectedOption === CLAIM_TYPE.REPAIR) {
+      payload.insuranceClaimDate = currentClaim.insuranceClaimDate;
     }
 
-    alert(`✅ ${selectedOption} claim submitted for verification!`);
-    resetFlow();
+    try {
+      let result;
+      if (selectedOption === CLAIM_TYPE.REPLACEMENT) {
+        result = await submitReplacement(currentClaim, payload);
+      } else {
+        result = await submitScreenDamage(currentClaim, payload);
+      }
+      alert(`✅ ${selectedOption} claim submitted successfully!`);
+      // Optionally update claim status based on result
+      if (currentClaim) {
+        updateClaim(currentClaim.id, { status: 'completed' });
+      }
+      resetFlow();
+    } catch (error) {
+      alert('Error submitting claim: ' + error.message);
+    }
   };
 
   const handleCancel = () => resetFlow();
@@ -156,7 +181,6 @@ const Representative = () => {
     setSelectedOption(null);
     setTxData({
       faultDate: '',
-      excessAmount: '',
       txId: '',
       additionalFeeAmount: '',
       additionalFeeTxId: '',
@@ -166,13 +190,7 @@ const Representative = () => {
     dismissPopup();
   };
 
-  const getPrefilledExcess = () => {
-    if (selectedOption === CLAIM_TYPE.REPAIR && currentClaim) {
-      return currentClaim.amount || currentClaim.excessAmount || '';
-    }
-    return '';
-  };
-
+  // For repair, we no longer need prefilled excess amount – the form will not show it
   const renderContent = () => {
     switch (step) {
       case STEP_TYPES.SEARCH:
@@ -207,7 +225,6 @@ const Representative = () => {
               onChange={handleTxChange}
               onSubmit={handleSubmitTx}
               onCancel={handleCancel}
-              prefilledExcessAmount={isRepair ? getPrefilledExcess() : ''}
               title={isRepair ? 'Add Payment Details (Repair)' : 'Add Payment Details (Replacement)'}
             />
           </>
@@ -221,7 +238,6 @@ const Representative = () => {
     <div className="representative-page">
       <div className="rep-header">
         <div className="rep-header-content">
-         
           <h2>Claim Management <span className="subtitle">Representative</span></h2>
         </div>
       </div>

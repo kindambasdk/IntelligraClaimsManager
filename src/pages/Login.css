@@ -21,15 +21,20 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  align: center;
   font-size: 24px;
   font-weight: 800;
   color: #0b2b4a;
   margin-bottom: 8px;
 }
 
-.login-logo i {
+.login-logo img {
   color: #2a6fdb;
-  font-size: 28px;
+  font-size: 34px;
+  width: 100px;          /* enlarged */
+  height: 100px;         /* enlarged */
+  
+
 }
 
 .login-card h2 {
@@ -123,4 +128,37 @@
   .login-card {
     padding: 24px 20px;
   }
+}
+
+/* Password input with toggle */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 45px; /* space for the toggle button */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: #8a9bb0;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.password-toggle:hover {
+  color: #2a6fdb;
+}
+
+.password-toggle:focus {
+  outline: none;
 }

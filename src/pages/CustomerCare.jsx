@@ -12,15 +12,15 @@ import './CustomerCare.css';
 
 const CustomerCare = () => {
   const { user } = useAuth();
-  const { 
-    currentClaim, 
-    fetchClaim, 
-    setCurrentClaim, 
-    isLoading, 
-    completeTransaction,
-    claims 
+  const {
+    currentClaim,
+    fetchClaim,
+    setCurrentClaim,
+    isLoading,
+    addExcess,          // new method from ClaimContext
+    claims
   } = useClaim();
-  
+
   const [searchValue, setSearchValue] = useState('255685968876');
   const [step, setStep] = useState(STEP_TYPES.SEARCH);
   const [txData, setTxData] = useState({ amount: '' });
@@ -60,24 +60,29 @@ const CustomerCare = () => {
     setTxData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmitTx = () => {
+  const handleSubmitTx = async () => {
     if (!txData.amount || parseFloat(txData.amount) <= 0) {
       alert('Please enter a valid amount');
       return;
     }
 
-    if (currentClaim) {
-      completeTransaction(currentClaim.id, {
-        primaryAmount: parseFloat(txData.amount),
-        date: new Date().toLocaleDateString(),
-        screenshot: null,
-        isExcess: false,
-        primaryTxId: null
-      });
+    if (!currentClaim) {
+      alert('No claim selected');
+      return;
     }
 
-    alert('✅ Repair claim submitted for verification!');
-    resetFlow();
+    try {
+      await addExcess(
+        currentClaim.msisdn,
+        currentClaim.insuranceClaimDate,
+        parseFloat(txData.amount),
+        'Added by Customer Care'
+      );
+      alert('✅ Excess amount added successfully!');
+      resetFlow();
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
   };
 
   const handleCancel = () => resetFlow();
@@ -132,12 +137,8 @@ const CustomerCare = () => {
     <div className="care-page">
       <div className="care-header">
         <div className="care-header-content">
-          {/*<i className="fas fa-hand-holding-heart"></i>*/}
           <h2>Repair Management <span className="subtitle">Customer Care</span></h2>
         </div>
-       {/* <div className="care-badge">
-          <i className="fas fa-tools"></i> Repair Only
-        </div>*/}
       </div>
       <div className="care-content step-transition">{renderContent()}</div>
     </div>

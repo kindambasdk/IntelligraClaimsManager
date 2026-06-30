@@ -3,15 +3,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 import logoIcon from '../assets/intelligra.png';
-import { ROLES, ROLE_LABELS } from '../constants/roles.js';
 import './Login.css';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState(ROLES.REPRESENTATIVE);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -20,42 +19,31 @@ const Login = () => {
     setError('');
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    if (!username.trim()) {
-      setError('Username is required');
+    try {
+      await login(username, password);
+      navigate('/', { replace: true });
+    } catch (err) {
+      // Show user-friendly error
+      if (err.message === 'Failed to fetch' || err.message.includes('NetworkError')) {
+      {/*connect to the server. Please ensure the backend is running.*/}
+        setError('Unable to Login');
+      } else {
+        setError(err.message || 'Login failed. Please check your credentials.');
+      }
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    if (password.length < 3) {
-      setError('Password must be at least 3 characters');
-      setIsLoading(false);
-      return;
-    }
-
-    const user = {
-      username: username.trim(),
-      role: role,
-      name: username.trim(),
-      email: `${username}@intelligra.io`
-    };
-
-    login(user);
-    navigate('/');
-    setIsLoading(false);
   };
 
   return (
     <div className="login-container">
       <div className="login-card">
         <div className="login-logo">
-        <img src={logoIcon} alt="INTELLIGRA Logo" className="logo-icon" />
-             <span>INTELLIGRA</span>
+          <img src={logoIcon} alt="INTELLIGRA Logo" className="logo-icon" />
+         {/* <span>INTELLIGRA</span>*/}
         </div>
         <h2>Sign In</h2>
-      
+        {/*<p className="login-sub">Enter your credentials to access the system</p>*/}
         
         <form onSubmit={handleSubmit}>
           {error && <div className="login-error">{error}</div>}
@@ -73,23 +61,24 @@ const Login = () => {
           
           <div className="form-group">
             <label>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Role</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value={ROLES.REPRESENTATIVE}>{ROLE_LABELS[ROLES.REPRESENTATIVE]}</option>
-              <option value={ROLES.CUSTOMER_CARE}>{ROLE_LABELS[ROLES.CUSTOMER_CARE]}</option>
-              <option value={ROLES.FINANCE}>{ROLE_LABELS[ROLES.FINANCE]}</option>
-              <option value={ROLES.ADMIN}>{ROLE_LABELS[ROLES.ADMIN]}</option>
-            </select>
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex="-1"
+                aria-label="Toggle password visibility"
+              >
+                <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+              </button>
+            </div>
           </div>
           
           <button type="submit" className="login-btn" disabled={isLoading}>
@@ -99,7 +88,7 @@ const Login = () => {
         </form>
         
         <div className="login-footer">
-          <span>rep@intelligra.com</span>
+          <span>Use the credentials provided by your administrator</span>
         </div>
       </div>
     </div>
