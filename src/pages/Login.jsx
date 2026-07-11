@@ -14,26 +14,20 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    try {
-      await login(username, password);
-      navigate('/', { replace: true });
-    } catch (err) {
-      // Show user-friendly error
-      if (err.message === 'Failed to fetch' || err.message.includes('NetworkError')) {
-      {/*connect to the server. Please ensure the backend is running.*/}
-        setError('Unable to Login');
-      } else {
-        setError(err.message || 'Login failed. Please check your credentials.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+// src/pages/Login.jsx (excerpt)
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setIsLoading(true);
+  try {
+    await login(username, password);
+    navigate('/', { replace: true });
+  } catch (err) {
+    setError(err.message || 'Login failed');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="login-container">
@@ -88,7 +82,7 @@ const Login = () => {
         </form>
         
         <div className="login-footer">
-          <span>Use the credentials provided by your administrator</span>
+        {/*  <span>Use the credentials provided by your administrator</span>*/}
         </div>
       </div>
     </div>

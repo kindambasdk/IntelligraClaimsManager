@@ -17,13 +17,13 @@ const CustomerCare = () => {
     fetchClaim,
     setCurrentClaim,
     isLoading,
-    addExcess,          // new method from ClaimContext
+    addExcess,
     claims
   } = useClaim();
 
   const [searchValue, setSearchValue] = useState('255685968876');
   const [step, setStep] = useState(STEP_TYPES.SEARCH);
-  const [txData, setTxData] = useState({ amount: '' });
+  const [txData, setTxData] = useState({ txId: '' });
 
   const handleSearch = async () => {
     if (!searchValue.trim()) return;
@@ -61,8 +61,8 @@ const CustomerCare = () => {
   };
 
   const handleSubmitTx = async () => {
-    if (!txData.amount || parseFloat(txData.amount) <= 0) {
-      alert('Please enter a valid amount');
+    if (!txData.txId || txData.txId.trim() === '') {
+      alert('Please enter a transaction ID');
       return;
     }
 
@@ -75,10 +75,10 @@ const CustomerCare = () => {
       await addExcess(
         currentClaim.msisdn,
         currentClaim.insuranceClaimDate,
-        parseFloat(txData.amount),
-        'Added by Customer Care'
+        0,
+        `Transaction ID: ${txData.txId.trim()}`
       );
-      alert('✅ Excess amount added successfully!');
+      alert('✅ Transaction ID recorded successfully!');
       resetFlow();
     } catch (error) {
       alert('Error: ' + error.message);
@@ -90,7 +90,7 @@ const CustomerCare = () => {
   const resetFlow = () => {
     setStep(STEP_TYPES.SEARCH);
     setCurrentClaim(null);
-    setTxData({ amount: '' });
+    setTxData({ txId: '' });
   };
 
   const renderContent = () => {
@@ -125,6 +125,7 @@ const CustomerCare = () => {
               onChange={handleTxChange}
               onSubmit={handleSubmitTx}
               onCancel={handleCancel}
+              agentName={user?.fullName || user?.username || 'Agent'} // <-- Auto-fill from logged-in user
             />
           </>
         );
@@ -137,7 +138,7 @@ const CustomerCare = () => {
     <div className="care-page">
       <div className="care-header">
         <div className="care-header-content">
-          <h2>Repair Management <span className="subtitle">Customer Care</span></h2>
+          <h2>Repair Management</h2>
         </div>
       </div>
       <div className="care-content step-transition">{renderContent()}</div>

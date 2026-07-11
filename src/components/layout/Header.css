@@ -76,7 +76,7 @@
 }
 
 .logo-icon {
-  width: 64px;
+  width: 100px;
   height: 64px;
   object-fit: contain;
   display: block;
@@ -84,7 +84,7 @@
 
 .logo i {
   color: #2a6fdb;
-  font-size: 20px;
+  font-size: 45px;
 }
 
 .header-center {

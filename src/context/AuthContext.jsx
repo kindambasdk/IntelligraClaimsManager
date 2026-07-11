@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import api from '../services/api';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -13,7 +13,18 @@ export function AuthProvider({ children }) {
     if (token) {
       api.setToken(token);
       api.getCurrentUser()
-        .then(res => setUser(res.data))
+        .then(res => {
+          if (res.success && res.data) {
+            // Ensure the role field is present
+            setUser({
+              ...res.data,
+              role: res.data.role // should be 'agent', 'customer_care', 'finance', 'admin'
+            });
+          } else {
+            localStorage.removeItem('token');
+            api.setToken(null);
+          }
+        })
         .catch(() => {
           localStorage.removeItem('token');
           api.setToken(null);
@@ -26,14 +37,19 @@ export function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     const res = await api.login(username, password);
-    api.setToken(res.data.token);
-    setUser({
-      username: res.data.username,
-      fullName: res.data.fullName,
-      role: res.data.role,
-      ...res.data
-    });
-    return res;
+    if (res.success && res.data && res.data.token) {
+      api.setToken(res.data.token);
+      // Set user state with role from login response
+      setUser({
+        username: res.data.username,
+        fullName: res.data.fullName,
+        role: res.data.role, // Ensure role is set
+        ...res.data
+      });
+      return res;
+    } else {
+      throw new Error(res.message || 'Login failed');
+    }
   };
 
   const logout = () => {
@@ -53,7 +69,9 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
-
-export default AuthContext;

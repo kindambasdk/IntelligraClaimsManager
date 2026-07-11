@@ -4,7 +4,6 @@ import { useAuth } from '../../hooks/useAuth.js';
 import { useLocation } from 'react-router-dom';
 import { ROLE_LABELS } from '../../constants/roles.js';
 import logoIcon from '../../assets/intelligra.png';
-
 import './Header.css';
 
 const Header = ({ onMenuClick, isSidebarOpen }) => {
@@ -23,7 +22,6 @@ const Header = ({ onMenuClick, isSidebarOpen }) => {
   return (
     <header className="app-header">
       <div className="header-left">
-        {/* Hamburger button - always visible */}
         <button className="hamburger-btn" onClick={onMenuClick} aria-label="Toggle menu">
           <span className={`hamburger-icon ${isSidebarOpen ? 'open' : ''}`}>
             <span></span>
@@ -33,17 +31,17 @@ const Header = ({ onMenuClick, isSidebarOpen }) => {
         </button>
         <div className="logo">
           <img src={logoIcon} alt="INTELLIGRA Logo" className="logo-icon" />
-
-          <span>INTELLIGRA</span>
         </div>
       </div>
       <div className="header-center">
-        <span className="page-title">{getPageTitle()}</span>
+        {/* Page title removed – you can uncomment if needed */}
+        {/* <span className="page-title">{getPageTitle()}</span> */}
       </div>
       <div className="header-right">
         <div className="user-badge">
           <i className="fas fa-user-circle"></i>
-          <span>{user?.name || 'User'}</span>
+          {/* Use fullName, fallback to username */}
+          <span>{user?.fullName || user?.username || 'User'}</span>
           <span className="user-role">{ROLE_LABELS[user?.role] || ''}</span>
         </div>
       </div>

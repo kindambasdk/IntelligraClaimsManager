@@ -10,27 +10,28 @@ const TransactionForm = ({
   onChange,
   onSubmit,
   onCancel,
-  prefilledExcessAmount     // used only for Representative Repair
+  prefilledExcessAmount,    // used only for Representative Repair
+  agentName                 // <-- NEW: logged-in user's name
 }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     onChange({ target: { name, value } });
   };
 
-  // ---- CUSTOMER CARE: only amount ----
+  // ---- CUSTOMER CARE: only transaction ID ----
   if (isCare) {
     return (
       <div className="claim-card transaction-container">
         <div className="transaction-title">{title}</div>
         <div className="tx-form">
           <div className="field">
-            <label>Transaction Amount *</label>
+            <label>Transaction ID *</label>
             <input
               type="text"
-              name="amount"
-              value={txData.amount || ''}
+              name="txId"
+              value={txData.txId || ''}
               onChange={handleInputChange}
-              placeholder="Enter amount"
+              placeholder="Enter transaction ID"
               required
             />
           </div>
@@ -40,7 +41,7 @@ const TransactionForm = ({
               type="button"
               className="submit-btn"
               onClick={onSubmit}
-              disabled={!txData.amount || parseFloat(txData.amount) <= 0}
+              disabled={!txData.txId || txData.txId.trim() === ''}
             >
               <i className="fas fa-check"></i> Submit
             </button>
@@ -82,11 +83,6 @@ const TransactionForm = ({
             className={isRepair ? 'readonly' : ''}
             required={!isRepair}
           />
-          {isRepair && (
-            <div className="helper-text">
-             {/* <i className="fas fa-info-circle"></i> Amount is pre-filled from claim data*/}
-            </div>
-          )}
         </div>
 
         {/* Transaction ID */}
@@ -113,11 +109,6 @@ const TransactionForm = ({
             className="readonly"
             placeholder="Auto‑extracted from Transaction ID"
           />
-          {txData.date && (
-            <div className="helper-text success">
-              {/*<i className="fas fa-check-circle"></i> Auto‑extracted from Transaction ID*/}
-            </div>
-          )}
         </div>
 
         {/* Additional Fee fields – only for Replacement, optional */}
@@ -142,23 +133,20 @@ const TransactionForm = ({
                 onChange={handleInputChange}
                 placeholder="e.g., MP260611.3000.X08196"
               />
-              <div className="helper-text">
-                {/*<i className="fas fa-info-circle"></i> Both fields must be filled together if used.*/}
-              </div>
             </div>
           </>
         )}
 
-        {/* Agent Name – manual input */}
+        {/* Agent Name – AUTO-FILLED & READ-ONLY */}
         <div className="field">
-          <label>Agent Name *</label>
+          <label>Agent Name</label>
           <input
             type="text"
             name="agentName"
-            value={txData.agentName || ''}
-            onChange={handleInputChange}
-            placeholder="Enter your name"
-            required
+            value={agentName || txData.agentName || ''}
+            readOnly
+            className="readonly"
+            placeholder="Auto-filled from login"
           />
         </div>
 

@@ -232,7 +232,7 @@ const Finance = () => {
           ============================================================ */}
       <div className="finance-header">
         <div className="finance-header-content">
-          <i className="fas fa-coins"></i>
+          {/*<i className="fas fa-coins"></i>*/}
           <h2>Finance</h2>
           <span className="finance-subtitle">View and export claims</span>
         </div>

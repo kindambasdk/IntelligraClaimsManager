@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext } from 'react';
 import api from '../services/api';
 import { CLAIM_STATUS } from '../constants/claimStatus';
 
-const ClaimContext = createContext();
+export const ClaimContext = createContext();
 
 export function ClaimProvider({ children }) {
   const [claims, setClaims] = useState([]);
@@ -11,33 +11,31 @@ export function ClaimProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Search customer from API
+  // ---------- FETCH CLAIM ----------
   const fetchClaim = async (msisdn) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await api.searchCustomer(msisdn);
-      const data = res.data;
-      // Transform to match frontend model
+      const response = await api.searchCustomer(msisdn);
+      const data = response.data;
+
       const claim = {
         id: Date.now(),
-        covernoteRefNumber: data.covernoteRefNumber,
-        msisdn: data.msisdn,
-        customerName: data.customerName,
-        imeiNumber: data.imeiNumber,
-        model: data.model,
-        brand: data.brand,
-        policyCreatedDate: data.policyCreatedDate,
-        rrp: data.rrp,
-        insuranceCoverPaidAmount: data.insuranceCoverAmount,
-        insuranceClaimDate: data.insuranceClaimDate,
-        program: data.program,
+        covernoteRefNumber: data.covernoteRefNumber || 'N/A',
+        msisdn: data.msisdn || msisdn,
+        customerName: data.customerName || 'Unknown',
+        imeiNumber: data.imeiNumber || 'N/A',
+        model: data.model || 'N/A',
+        brand: data.brand || 'N/A',
+        policyCreatedDate: data.policyCreatedDate || null,
+        rrp: data.rrp || 0,
+        insuranceCoverPaidAmount: data.insuranceCoverPaidAmount || data.insuranceCoverAmount || 0,
+        insuranceClaimDate: data.insuranceClaimDate || null,
+        program: data.program || 'N/A',
         status: CLAIM_STATUS.PENDING,
-        representative: null,
-        // Additional fields will be filled later
+        isMock: false
       };
       setCurrentClaim(claim);
-      // Optionally add to claims list (or keep separate)
       setClaims(prev => [...prev, claim]);
       return claim;
     } catch (err) {
@@ -48,9 +46,8 @@ export function ClaimProvider({ children }) {
     }
   };
 
-  // Create replacement payment
+  // ---------- SUBMIT REPLACEMENT ----------
   const submitReplacement = async (claim, paymentData) => {
-    // paymentData: { excessTid, faultDate, agentName, topupTid?, topupAmount? }
     const payload = {
       msisdn: claim.msisdn,
       excessTid: paymentData.excessTid,
@@ -60,12 +57,11 @@ export function ClaimProvider({ children }) {
       ...(paymentData.topupAmount && { topupAmount: paymentData.topupAmount })
     };
     const res = await api.createReplacementPayment(payload);
-    // Update claim status
     updateClaim(claim.id, { status: 'completed' });
     return res;
   };
 
-  // Create screen damage payment
+  // ---------- SUBMIT SCREEN DAMAGE ----------
   const submitScreenDamage = async (claim, paymentData) => {
     const payload = {
       msisdn: claim.msisdn,
@@ -79,13 +75,14 @@ export function ClaimProvider({ children }) {
     return res;
   };
 
-  // Customer Care: add excess
+  // ---------- ADD EXCESS (Customer Care) ----------
   const addExcess = async (msisdn, insuranceClaimDate, excessAmount, notes = '') => {
     const payload = { msisdn, insuranceClaimDate, excessAmount, notes };
     const res = await api.addScreenDamageExcess(payload);
     return res;
   };
 
+  // ---------- UPDATE CLAIM ----------
   const updateClaim = (id, updates) => {
     setClaims(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
     if (currentClaim && currentClaim.id === id) {
@@ -93,34 +90,39 @@ export function ClaimProvider({ children }) {
     }
   };
 
+  // ---------- CLEAR CURRENT CLAIM ----------
   const clearCurrentClaim = () => {
     setCurrentClaim(null);
     setError(null);
   };
 
-  const value = {
-    claims,
-    currentClaim,
-    isLoading,
-    error,
-    fetchClaim,
-    submitReplacement,
-    submitScreenDamage,
-    addExcess,
-    updateClaim,
-    clearCurrentClaim,
-    setCurrentClaim
-  };
-
+  // ---------- PROVIDER VALUE ----------
   return (
-    <ClaimContext.Provider value={value}>
+    <ClaimContext.Provider value={{
+      claims,
+      currentClaim,
+      isLoading,
+      error,
+      fetchClaim,
+      submitReplacement,
+      submitScreenDamage,
+      addExcess,
+      updateClaim,
+      clearCurrentClaim,
+      setCurrentClaim,
+      setError
+    }}>
       {children}
     </ClaimContext.Provider>
   );
 }
 
 export function useClaim() {
-  return useContext(ClaimContext);
+  const context = useContext(ClaimContext);
+  if (!context) {
+    throw new Error('useClaim must be used within a ClaimProvider');
+  }
+  return context;
 }
 
 export default ClaimContext;

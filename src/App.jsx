@@ -1,9 +1,8 @@
 // src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext.jsx';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { ClaimProvider } from './context/ClaimContext.jsx';
-import { useAuth } from './hooks/useAuth.js';
 import Login from './pages/Login.jsx';
 import Representative from './pages/Representative.jsx';
 import CustomerCare from './pages/CustomerCare.jsx';
@@ -25,28 +24,42 @@ function App() {
 }
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
 
-  // If user is not logged in and not on login page, redirect to login
-  if (!user && location.pathname !== '/login') {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  // Show loading while checking authentication
+  if (loading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
   }
 
-  // If user is logged in and on login page, redirect to home
+  // If not logged in and not on login page, redirect to login
+  if (!user && location.pathname !== '/login') {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If logged in and on login page, redirect to dashboard
   if (user && location.pathname === '/login') {
     return <Navigate to="/" replace />;
   }
 
-  // If user is logged in, render the appropriate role page
+  // If logged in, render the appropriate dashboard based on role
   if (user) {
-    const roleComponents = {
-      rep: Representative,
-      care: CustomerCare,
+    console.log('🔹 User role:', user.role); // Debug log
+
+    const roleMap = {
+      agent: Representative,
+      customer_care: CustomerCare,
       finance: Finance,
       admin: Admin
     };
-    const Component = roleComponents[user.role] || Representative;
+
+    // Fallback: if role is not recognized, redirect to login (or show a default page)
+    const Component = roleMap[user.role];
+    if (!Component) {
+      console.warn('⚠️ Unknown role:', user.role);
+      return <Navigate to="/login" replace />;
+    }
+
     return (
       <Layout>
         <Component />
@@ -54,13 +67,8 @@ function AppRoutes() {
     );
   }
 
-  // Login page
-  if (location.pathname === '/login') {
-    return <Login />;
-  }
-
-  // Default fallback
-  return <Navigate to="/" replace />;
+  // Fallback: render login
+  return <Login />;
 }
 
 export default App;

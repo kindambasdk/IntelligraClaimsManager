@@ -21,20 +21,21 @@ const Representative = () => {
     updateClaim,
     submitReplacement,
     submitScreenDamage,
-    claims
+    claims,
+    setError,
+    error
   } = useClaim();
 
   const [searchValue, setSearchValue] = useState('255685968876');
   const [step, setStep] = useState(STEP_TYPES.SEARCH);
-  const [selectedOption, setSelectedOption] = useState(null); // 'Replacement' or 'Repair'
+  const [selectedOption, setSelectedOption] = useState(null);
 
-  // Transaction data – fields required by the API
   const [txData, setTxData] = useState({
     faultDate: '',
-    txId: '',               // excessTid
-    additionalFeeAmount: '', // topupAmount (optional)
-    additionalFeeTxId: '',   // topupTid (optional)
-    date: '',               // auto‑extracted from txId
+    txId: '',
+    additionalFeeAmount: '',
+    additionalFeeTxId: '',
+    date: '',
     agentName: ''
   });
 
@@ -58,9 +59,25 @@ const Representative = () => {
         };
         setCurrentClaim(newClaim);
         setStep(STEP_TYPES.DETAILS);
+        setError(null);
       }
     } catch (error) {
-      alert('Error fetching claim: ' + error.message);
+      let userMessage = 'Error fetching claim: ' + error.message;
+      if (error.message.includes('UNAUTHORIZED')) {
+        userMessage = '❌ Your session has expired. Please log in again.';
+      } else if (error.message.includes('CLAIM_NOT_FOUND')) {
+        userMessage = '❌ No claim found for this phone number. Please verify and try again.';
+      } else if (error.message.includes('NETWORK_ERROR')) {
+        userMessage = '🌐 Network error: Unable to reach the claim server. Please check your connection.';
+      } else if (error.message.includes('SERVER_ERROR')) {
+        userMessage = '⚠️ Server error: The claim service is temporarily unavailable. Please try again later.';
+      } else if (error.message.includes('ACCESS_DENIED')) {
+        userMessage = '🔒 Access denied: You don\'t have permission to view this claim.';
+      } else if (error.message.includes('INVALID_RESPONSE') || error.message.includes('INVALID_JSON')) {
+        userMessage = '📄 Invalid response from server. Please try again.';
+      }
+      setError(userMessage);
+      alert(userMessage);
     }
   };
 
@@ -80,7 +97,6 @@ const Representative = () => {
   const handleTxChange = (e) => {
     const { name, value } = e.target;
     setTxData(prev => ({ ...prev, [name]: value }));
-    // Auto‑extract date from main transaction ID
     if (name === 'txId' && value.length >= 8) {
       const extracted = extractDateFromTxId(value);
       if (extracted) {
@@ -117,12 +133,12 @@ const Representative = () => {
       alert('Please enter a transaction ID');
       return;
     }
+    // Agent name is auto-filled, but we keep a safety check
     if (!txData.agentName.trim()) {
-      alert('Please enter your name (Agent)');
+      alert('Agent name is required. Please log in again.');
       return;
     }
 
-    // For replacement, validate optional top‑up fields
     if (selectedOption === CLAIM_TYPE.REPLACEMENT) {
       if (txData.additionalFeeAmount && !txData.additionalFeeTxId) {
         alert('Please enter the top‑up transaction ID');
@@ -134,7 +150,6 @@ const Representative = () => {
       }
     }
 
-    // Build payload
     const payload = {
       msisdn: currentClaim.msisdn,
       excessTid: txData.txId,
@@ -142,7 +157,6 @@ const Representative = () => {
       agentName: txData.agentName.trim()
     };
 
-    // Add optional top‑up fields only for replacement
     if (selectedOption === CLAIM_TYPE.REPLACEMENT) {
       if (txData.additionalFeeAmount && txData.additionalFeeTxId) {
         payload.topupTid = txData.additionalFeeTxId;
@@ -150,7 +164,6 @@ const Representative = () => {
       }
     }
 
-    // For repair, we need insuranceClaimDate (already in claim)
     if (selectedOption === CLAIM_TYPE.REPAIR) {
       payload.insuranceClaimDate = currentClaim.insuranceClaimDate;
     }
@@ -163,7 +176,6 @@ const Representative = () => {
         result = await submitScreenDamage(currentClaim, payload);
       }
       alert(`✅ ${selectedOption} claim submitted successfully!`);
-      // Optionally update claim status based on result
       if (currentClaim) {
         updateClaim(currentClaim.id, { status: 'completed' });
       }
@@ -190,7 +202,6 @@ const Representative = () => {
     dismissPopup();
   };
 
-  // For repair, we no longer need prefilled excess amount – the form will not show it
   const renderContent = () => {
     switch (step) {
       case STEP_TYPES.SEARCH:
@@ -226,6 +237,7 @@ const Representative = () => {
               onSubmit={handleSubmitTx}
               onCancel={handleCancel}
               title={isRepair ? 'Add Payment Details (Repair)' : 'Add Payment Details (Replacement)'}
+              agentName={user?.fullName || user?.username || 'Agent'} // <-- Auto-fill from logged-in user
             />
           </>
         );
@@ -238,7 +250,7 @@ const Representative = () => {
     <div className="representative-page">
       <div className="rep-header">
         <div className="rep-header-content">
-          <h2>Claim Management <span className="subtitle">Representative</span></h2>
+          <h2>Claim Management</h2>
         </div>
       </div>
       <div className="rep-content step-transition">{renderContent()}</div>
