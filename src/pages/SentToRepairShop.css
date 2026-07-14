@@ -1,0 +1,98 @@
+.sent-shop-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.sent-shop-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.sent-shop-header i {
+  font-size: 28px;
+  color: #1f4f8a;
+}
+
+.sent-shop-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0b2b4a;
+  margin: 0;
+}
+
+.sent-shop-form-container {
+  background: white;
+  border-radius: 28px;
+  padding: 24px;
+  border: 1px solid #e6edf5;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  color: #2f405b;
+  margin-bottom: 4px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 40px;
+  border: 1px solid #d2deed;
+  font-size: 14px;
+  transition: 0.2s;
+  background: white;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #2a6fdb;
+  box-shadow: 0 0 0 3px rgba(42, 111, 219, 0.1);
+}
+
+.form-group textarea {
+  border-radius: 16px;
+  resize: vertical;
+}
+
+.readonly-field {
+  background: #f4f7fc !important;
+  color: #586b86 !important;
+  cursor: not-allowed;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.btn-primary {
+  background: #1f4f8a;
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 40px;
+  font-weight: 600;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-primary:hover {
+  background: #123b69;
+  transform: scale(0.97);
+}

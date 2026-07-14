@@ -6,6 +6,7 @@ import { ClaimProvider } from './context/ClaimContext.jsx';
 import Login from './pages/Login.jsx';
 import Representative from './pages/Representative.jsx';
 import CustomerCare from './pages/CustomerCare.jsx';
+import SentToRepairShop from './pages/SentToRepairShop.jsx';
 import Finance from './pages/Finance.jsx';
 import Admin from './pages/Admin.jsx';
 import Layout from './components/layout/Layout.jsx';
@@ -42,10 +43,18 @@ function AppRoutes() {
     return <Navigate to="/" replace />;
   }
 
-  // If logged in, render the appropriate dashboard based on role
+  // If logged in, handle special routes before role‑based routing
   if (user) {
-    console.log('🔹 User role:', user.role); // Debug log
+    // ---- SPECIAL ROUTE: Sent to service center ----
+    if (location.pathname === '/sent-shop') {
+      return (
+        <Layout>
+          <SentToRepairShop />
+        </Layout>
+      );
+    }
 
+    // ---- ROLE‑BASED ROUTING ----
     const roleMap = {
       agent: Representative,
       customer_care: CustomerCare,
@@ -53,7 +62,6 @@ function AppRoutes() {
       admin: Admin
     };
 
-    // Fallback: if role is not recognized, redirect to login (or show a default page)
     const Component = roleMap[user.role];
     if (!Component) {
       console.warn('⚠️ Unknown role:', user.role);

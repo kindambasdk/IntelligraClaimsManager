@@ -26,10 +26,10 @@ const ClaimCard = ({ claim, representative, onAddPayment, onOptionSelect, popupV
     }
   }, [popupVisible, isPopupOpen]);
 
-  // If no claim, return null (AFTER all hooks are called)
+  // If no claim, return null
   if (!claim) return null;
 
-  // Extract data from claim (dynamically from API response)
+  // Extract data from claim
   const ref = claim.covernoteRefNumber || 'N/A';
   const customerName = claim.customerName || 'Unknown';
   const phone = claim.msisdn || 'N/A';
@@ -39,14 +39,12 @@ const ClaimCard = ({ claim, representative, onAddPayment, onOptionSelect, popupV
   const program = claim.program || 'N/A';
   const rep = representative || claim.representative || 'Unassigned';
 
-  // Format date for display - only date, no time
+  // Format date – only date, no time
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
       const date = new Date(dateString);
-      // Check if valid date
       if (isNaN(date.getTime())) return dateString;
-      // Return only date (MM/DD/YYYY) without time
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: '2-digit',
@@ -67,81 +65,99 @@ const ClaimCard = ({ claim, representative, onAddPayment, onOptionSelect, popupV
     if (onOptionSelect) onOptionSelect(option);
   };
 
-  // For Customer Care, only show Repair option
+  // Options for the popup
   const popupOptions = isCare ? ['Repair'] : ['Replacement', 'Repair'];
 
   return (
-    <div className="search-sectionx">
     <div className="claim-card">
-      <div className="claim-ref">{ref}</div>
-      
+      {/* Title: Claim Details */}
+      <div className="claim-title">Claim Details</div>
+
+      {/* Claim Policy number */}
+      <div className="claim-detail">
+        <span className="label">Claim Policy number</span>
+        <span className="value">{ref}</span>
+      </div>
+
+      {/* Customer */}
       <div className="claim-detail">
         <span className="label">Customer</span>
         <span className="value">{customerName}</span>
       </div>
+
+      {/* Phone */}
       <div className="claim-detail">
         <span className="label">Phone</span>
         <span className="value">{phone}</span>
       </div>
+
+      {/* IMEI */}
       <div className="claim-detail">
         <span className="label">IMEI</span>
         <span className="value">{imei}</span>
       </div>
+
+      {/* Model */}
       <div className="claim-detail">
         <span className="label">Model</span>
         <span className="value">{model}</span>
       </div>
+
+      {/* Claim Date */}
       <div className="claim-detail">
         <span className="label">Claim Date</span>
         <span className="value">{formatDate(claimDate)}</span>
       </div>
+
+      {/* Program */}
       <div className="claim-detail">
         <span className="label">Program</span>
         <span className="value">{program}</span>
       </div>
-     
-      
-    
+
+      {/* Agent (optional – you can remove if not needed) */}
+      <div className="claim-detail">
+        <span className="label">Agent</span>
+        <span className="value">{rep}</span>
+      </div>
+
+      {/* Add Payment Button */}
       <div className="card-actions" style={{ position: 'relative' }}>
-        <button 
-          ref={buttonRef}
-          className="btn-primary" 
-          onClick={handleButtonClick}
-        >
+        <button ref={buttonRef} className="btn-primary" onClick={handleButtonClick}>
           <i className="fas fa-plus-circle"></i> Add Payment
         </button>
-        
-        {/* Popup dropdown below the button */}
+
         {isPopupOpen && (
           <div ref={popupRef} className="popup-dropdown">
             <div className="popup-dropdown-content">
               <div className="popup-title">
                 {isCare ? 'Process Repair Payment' : 'Choose claim type'}
               </div>
-              {popupOptions.map(option => (
-                <button 
+              {popupOptions.map((option) => (
+                <button
                   key={option}
-                  className="popup-option-btn" 
+                  className="popup-option-btn"
                   onClick={() => handleOptionClick(option)}
                 >
-                  {/*<i className={`fas ${option === 'Replacement' ? 'fa-exchange-alt' : 'fa-tools'}`}></i>*/}
                   {option}
                 </button>
               ))}
               <div className="popup-timer">
                 <div className="popup-progress-bar">
-                  <div 
-                    className="popup-progress-fill" 
+                  <div
+                    className="popup-progress-fill"
                     style={{ width: `${popupProgress || 0}%` }}
                   />
                 </div>
-                <span className="popup-timer-text">Auto-dismissing in {Math.ceil((100 - (popupProgress || 0)) / 25)}s</span>
+                <span className="popup-timer-text">
+                  Auto-dismissing in {Math.ceil((100 - (popupProgress || 0)) / 25)}s
+                </span>
               </div>
             </div>
           </div>
         )}
       </div>
-    </div></div>
+    </div>
   );
 };
 

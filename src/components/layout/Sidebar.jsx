@@ -24,9 +24,10 @@ const Sidebar = ({ isOpen, onClose }) => {
   const getRoleIcon = () => ROLE_ICONS[user?.role] || 'fa-user';
   const getRoleLabel = () => ROLE_LABELS[user?.role] || 'User';
 
+  // ✅ Use fullName or username for initials
   const getUserInitials = () => {
-    if (!user?.name) return 'U';
-    return user.name
+    const displayName = user?.fullName || user?.username || 'User';
+    return displayName
       .split(' ')
       .map(word => word[0])
       .join('')
@@ -48,15 +49,21 @@ const Sidebar = ({ isOpen, onClose }) => {
     });
 
     if (role === ROLES.REPRESENTATIVE) {
-      // Removed "Claims" item – only dashboard remains
-      // (No extra items)
+      // Representative items (if any)
     }
 
     if (role === ROLES.CUSTOMER_CARE) {
       items.push({
+        id: 'SentShop',
+        label: 'Sent to service center',   // <-- UPDATED LABEL
+        //icon: 'fa-tools',                 // consider changing to 'fa-truck' or 'fa-store'
+        path: '/sent-shop',
+        active: location.pathname === '/sent-shop'
+      });
+      items.push({
         id: 'repairs',
         label: 'Repair Claims',
-        icon: 'fa-tools',
+      //  icon: 'fa-tools',
         path: '/care',
         active: location.pathname === '/care'
       });
@@ -117,13 +124,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       <div className="sidebar-profile">
         <div className="avatar">
           {user?.avatar ? (
-            <img src={user.avatar} alt={user.name} />
+            <img src={user.avatar} alt={user.fullName} />
           ) : (
             <span className="avatar-initials">{getUserInitials()}</span>
           )}
         </div>
         <div className="user-info">
-          <div className="user-name">{user?.name || 'User'}</div>
+          <div className="user-name">{user?.fullName || user?.username || 'User'}</div>
           <div className="user-role">
             <i className={`fas ${getRoleIcon()}`}></i>
             <span>{getRoleLabel()}</span>

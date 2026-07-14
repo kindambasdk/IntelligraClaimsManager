@@ -1,23 +1,24 @@
 // src/constants/roles.js
+
 export const ROLES = {
-  REPRESENTATIVE: 'rep',
-  CUSTOMER_CARE: 'care',
-  FINANCE: 'finance',
-  ADMIN: 'admin'
+  ADMIN: 'admin',
+  REPRESENTATIVE: 'agent',          // backend uses 'agent'
+  CUSTOMER_CARE: 'customer_care',   // backend uses 'customer_care'
+  FINANCE: 'finance'
 };
 
 export const ROLE_LABELS = {
+  [ROLES.ADMIN]: 'Administrator',
   [ROLES.REPRESENTATIVE]: 'Representative',
   [ROLES.CUSTOMER_CARE]: 'Customer Care',
-  [ROLES.FINANCE]: 'Finance',
-  [ROLES.ADMIN]: 'Administrator'
+  [ROLES.FINANCE]: 'Finance'
 };
 
 export const ROLE_ICONS = {
+  [ROLES.ADMIN]: 'fa-user-shield',
   [ROLES.REPRESENTATIVE]: 'fa-headset',
   [ROLES.CUSTOMER_CARE]: 'fa-hand-holding-heart',
-  [ROLES.FINANCE]: 'fa-coins',
-  [ROLES.ADMIN]: 'fa-user-shield'
+  [ROLES.FINANCE]: 'fa-coins'
 };
 
 export const ROLE_ROUTES = {

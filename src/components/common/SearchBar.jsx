@@ -15,7 +15,7 @@ const SearchBar = ({ value, onChange, onSearch, placeholder, isLoading }) => {
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder || 'Enter phone number (e.g., 255781518973)'}
+          placeholder={ 'Enter phone number (e.g., 255781518973)'}
           onKeyPress={handleKeyPress}
           disabled={isLoading}
         />

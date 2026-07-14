@@ -1,6 +1,6 @@
 /* src/components/common/ClaimCard.css */
 .claim-card {
-  background: #FFFFFF;
+  background: white;
   border-radius: 28px;
   padding: 20px 22px;
   box-shadow: 0 6px 18px rgba(0, 20, 40, 0.02);
@@ -26,28 +26,16 @@
   }
 }
 
-.claim-ref {
-  font-size: 16px;
+/* New title style */
+.claim-title {
+  font-size: 18px;
   font-weight: 700;
-  color: #1f4f8a;
-  letter-spacing: -0.2px;
+  color: #0b2b4a;
   margin-bottom: 12px;
   padding-bottom: 12px;
   border-bottom: 2px solid #f0f4fa;
-  font-family: 'Courier New', monospace;
 }
-.search-sectionx {
-  background: #f8faff;
-  border-radius: 28px;
-  padding: 16px 18px;
-  margin-bottom: 20px;
-  border: 1px solid #dfe8f2;
-  max-width: 80%;
-  width: 100%;
-  opacity: 100%;
-  margin-left: auto;
-  margin-right: auto;
-}
+
 .claim-detail {
   display: flex;
   justify-content: space-between;
@@ -61,9 +49,8 @@
 }
 
 .claim-detail .label {
-  color: #000004;
+  color: #586b86;
   font-weight: 500;
-   
   min-width: 100px;
 }
 
@@ -130,18 +117,16 @@
   background: #f0f5fe;
 }
 
-
 /* Popup Dropdown Styles – positioned above the button */
 .popup-dropdown {
   position: absolute;
-  bottom: calc(100% + 8px);   /* instead of top: calc(100% + 8px) */
+  bottom: calc(100% + 8px);
   right: 0;
   z-index: 1000;
   min-width: 240px;
-  animation: popupSlideUp 0.25s ease;   /* use a slide-up animation */
+  animation: popupSlideUp 0.25s ease;
 }
 
-/* New animation for popup appearing above */
 @keyframes popupSlideUp {
   from {
     opacity: 0;

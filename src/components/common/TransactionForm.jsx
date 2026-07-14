@@ -79,7 +79,7 @@ const TransactionForm = ({
             value={isRepair ? prefilledExcessAmount : txData.excessAmount}
             onChange={isRepair ? undefined : handleInputChange}
             readOnly={isRepair}
-            placeholder={isRepair ? 'Auto-filled from system' : 'Enter excess amount'}
+           // placeholder={isRepair ? 'Auto-filled from system' : 'Enter excess amount'}
             className={isRepair ? 'readonly' : ''}
             required={!isRepair}
           />
@@ -93,7 +93,7 @@ const TransactionForm = ({
             name="txId"
             value={txData.txId || ''}
             onChange={handleInputChange}
-            placeholder="e.g., MP260610.2000.X08195"
+           // placeholder="e.g., MP260610.2000.X08195"
             required
           />
         </div>
@@ -107,7 +107,7 @@ const TransactionForm = ({
             value={txData.date || ''}
             readOnly
             className="readonly"
-            placeholder="Auto‑extracted from Transaction ID"
+           // placeholder="Auto‑extracted from Transaction ID" 
           />
         </div>
 
@@ -121,7 +121,7 @@ const TransactionForm = ({
                 name="additionalFeeAmount"
                 value={txData.additionalFeeAmount || ''}
                 onChange={handleInputChange}
-                placeholder="e.g., 25000"
+                // placeholder="e.g., 25000"
               />
             </div>
             <div className="field">
@@ -131,7 +131,7 @@ const TransactionForm = ({
                 name="additionalFeeTxId"
                 value={txData.additionalFeeTxId || ''}
                 onChange={handleInputChange}
-                placeholder="e.g., MP260611.3000.X08196"
+                // placeholder="e.g., MP260611.3000.X08196"
               />
             </div>
           </>
@@ -146,7 +146,7 @@ const TransactionForm = ({
             value={agentName || txData.agentName || ''}
             readOnly
             className="readonly"
-            placeholder="Auto-filled from login"
+            //placeholder="Auto-filled from login"
           />
         </div>
 

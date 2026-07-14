@@ -42,7 +42,7 @@ const Header = ({ onMenuClick, isSidebarOpen }) => {
           <i className="fas fa-user-circle"></i>
           {/* Use fullName, fallback to username */}
           <span>{user?.fullName || user?.username || 'User'}</span>
-          <span className="user-role">{ROLE_LABELS[user?.role] || ''}</span>
+         {/* <span className="user-role">{ROLE_LABELS[user?.role] || ''}</span> */}
         </div>
       </div>
     </header>
