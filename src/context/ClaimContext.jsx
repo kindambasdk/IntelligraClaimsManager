@@ -20,21 +20,21 @@ export function ClaimProvider({ children }) {
       const data = response.data;
 
       const claim = {
-  id: Date.now(),
-  covernoteRefNumber: data.covernoteRefNumber || 'N/A',
-  msisdn: data.msisdn || msisdn,
-  customerName: data.customerName || 'Unknown',
-  imeiNumber: data.imeiNumber || 'N/A',
-  model: data.model || 'N/A',
-  brand: data.brand || 'N/A',
-  policyCreatedDate: data.policyCreatedDate || null,   // <-- already present
-  rrp: data.rrp || 0,
-  insuranceCoverPaidAmount: data.insuranceCoverPaidAmount || data.insuranceCoverAmount || 0,
-  insuranceClaimDate: data.insuranceClaimDate || null,
-  program: data.program || 'N/A',
-  status: CLAIM_STATUS.PENDING,
-  isMock: false
-};
+        id: Date.now(),
+        covernoteRefNumber: data.covernoteRefNumber || 'N/A',
+        msisdn: data.msisdn || msisdn,
+        customerName: data.customerName || 'Unknown',
+        imeiNumber: data.imeiNumber || 'N/A',
+        model: data.model || 'N/A',
+        brand: data.brand || 'N/A',
+        policyCreatedDate: data.policyCreatedDate || null,
+        rrp: data.rrp || 0,
+        insuranceCoverPaidAmount: data.insuranceCoverPaidAmount || data.insuranceCoverAmount || 0,
+        insuranceClaimDate: data.insuranceClaimDate || null,
+        program: data.program || 'N/A',
+        status: CLAIM_STATUS.PENDING,
+        isMock: false
+      };
       setCurrentClaim(claim);
       setClaims(prev => [...prev, claim]);
       return claim;
@@ -61,7 +61,7 @@ export function ClaimProvider({ children }) {
     return res;
   };
 
-  // ---------- SUBMIT SCREEN DAMAGE ----------
+  // ---------- SUBMIT SCREEN DAMAGE (Repair) ----------
   const submitScreenDamage = async (claim, paymentData) => {
     const payload = {
       msisdn: claim.msisdn,
@@ -76,9 +76,18 @@ export function ClaimProvider({ children }) {
   };
 
   // ---------- ADD EXCESS (Customer Care) ----------
-  const addExcess = async (msisdn, insuranceClaimDate, excessAmount, notes = '') => {
-    const payload = { msisdn, insuranceClaimDate, excessAmount, notes };
+  // Now accepts repairAmount and faultDate
+  const addExcess = async (msisdn, insuranceClaimDate, repairAmount, faultDate, notes = '') => {
+    const payload = { msisdn, insuranceClaimDate, repairAmount, faultDate, notes };
     const res = await api.addScreenDamageExcess(payload);
+    // Update local claim with the new data (optional)
+    // The backend returns the calculated excess, but we don't need to store it locally.
+    return res;
+  };
+
+  // ---------- CHECK EXCESS (Agent) ----------
+  const checkExcess = async (msisdn, claimDate) => {
+    const res = await api.checkScreenDamageExcess(msisdn, claimDate);
     return res;
   };
 
@@ -96,7 +105,6 @@ export function ClaimProvider({ children }) {
     setError(null);
   };
 
-  // ---------- PROVIDER VALUE ----------
   return (
     <ClaimContext.Provider value={{
       claims,
@@ -107,6 +115,7 @@ export function ClaimProvider({ children }) {
       submitReplacement,
       submitScreenDamage,
       addExcess,
+      checkExcess,       // new
       updateClaim,
       clearCurrentClaim,
       setCurrentClaim,

@@ -149,24 +149,28 @@ class ApiClient {
     return this._request(`/agent/customer/${msisdn}`);
   }
 
-  // NEW: Calculate excess amount based on fault date
+  // Calculate excess amount based on fault date (for replacement)
   calculateExcess(msisdn, faultDate) {
     return this._request(`/agent/calculate-excess/${msisdn}/${faultDate}`);
   }
 
-  createReplacementPayment(payload) {
-    return this._request('/agent/replacement-payment', 'POST', payload);
-  }
-
-  createScreenDamagePayment(payload) {
-    return this._request('/agent/screen-damage-payment', 'POST', payload);
-  }
-
+  // Check if Customer Care has added excess for a repair claim
   checkScreenDamageExcess(msisdn, claimDate) {
     return this._request(`/agent/check-excess/${msisdn}/${claimDate}`);
   }
 
+  // Create replacement payment (agent)
+  createReplacementPayment(payload) {
+    return this._request('/agent/replacement-payment', 'POST', payload);
+  }
+
+  // Create screen damage (repair) payment (agent)
+  createScreenDamagePayment(payload) {
+    return this._request('/agent/screen-damage-payment', 'POST', payload);
+  }
+
   // ---------- CUSTOMER CARE ----------
+  // Add repair excess (uses repairAmount and faultDate)
   addScreenDamageExcess(payload) {
     return this._request('/customer-care/screen-damage-excess', 'POST', payload);
   }

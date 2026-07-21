@@ -24,7 +24,8 @@ const Representative = () => {
     submitScreenDamage,
     claims,
     setError,
-    error
+    error,
+    checkExcess
   } = useClaim();
 
   const [searchValue, setSearchValue] = useState('');
@@ -32,14 +33,17 @@ const Representative = () => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [calculatedExcess, setCalculatedExcess] = useState(null);
+  const [excessData, setExcessData] = useState(null); // for repair check
 
   const [txData, setTxData] = useState({
     faultDate: '',
-    txId: '',
-    excessFeeTxId: '',   // NEW
-    date: '',
+    txId: '',               // main transaction ID (for repair)
+    excessFeeTxId: '',       // excess fee TID (for replacement, required)
+    topupAmount: '',         // top‑up amount (optional)
+    topupTxId: '',           // top‑up TID (optional)
+    date: '',                // auto‑extracted date
     agentName: '',
-    excessAmount: ''     // manual transaction amount (for replacement)
+    excessAmount: ''         // auto‑filled for repair, or manually for replacement? Actually for repair it's auto‑filled.
   });
 
   const { isVisible: isPopupVisible, show: showPopup, dismiss: dismissPopup, progress: popupProgress } = useAutoDismiss(4000);
@@ -54,13 +58,10 @@ const Representative = () => {
       setIsCalculating(true);
       try {
         const response = await api.calculateExcess(currentClaim.msisdn, txData.faultDate);
-        console.log('📦 Excess API Response:', response);
-
         let amount = null;
         if (response.data !== undefined && response.data !== null) {
           amount = response.data;
         }
-
         if (amount !== null && amount !== undefined) {
           setCalculatedExcess(amount.toString());
         } else {
@@ -101,19 +102,11 @@ const Representative = () => {
       }
     } catch (error) {
       let userMessage = 'Error fetching claim: ' + error.message;
-      if (error.message.includes('UNAUTHORIZED')) {
-        userMessage = '❌ Your session has expired. Please log in again.';
-      } else if (error.message.includes('CLAIM_NOT_FOUND')) {
-        userMessage = '❌ No claim found for this phone number. Please verify and try again.';
-      } else if (error.message.includes('NETWORK_ERROR')) {
-        userMessage = '🌐 Network error: Unable to reach the claim server. Please check your connection.';
-      } else if (error.message.includes('SERVER_ERROR')) {
-        userMessage = '⚠️ Server error: The claim service is temporarily unavailable. Please try again later.';
-      } else if (error.message.includes('ACCESS_DENIED')) {
-        userMessage = '🔒 Access denied: You don\'t have permission to view this claim.';
-      } else if (error.message.includes('INVALID_RESPONSE') || error.message.includes('INVALID_JSON')) {
-        userMessage = '📄 Invalid response from server. Please try again.';
-      }
+      if (error.message.includes('UNAUTHORIZED')) userMessage = '❌ Your session has expired. Please log in again.';
+      else if (error.message.includes('CLAIM_NOT_FOUND')) userMessage = '❌ No claim found.';
+      else if (error.message.includes('NETWORK_ERROR')) userMessage = '🌐 Network error.';
+      else if (error.message.includes('SERVER_ERROR')) userMessage = '⚠️ Server error.';
+      else if (error.message.includes('ACCESS_DENIED')) userMessage = '🔒 Access denied.';
       setError(userMessage);
       alert(userMessage);
     }
@@ -124,25 +117,59 @@ const Representative = () => {
     showPopup();
   };
 
-  // ---- OPTION SELECT (Replacement or Repair) ----
-  const handleOptionSelect = (option) => {
+  // ---- OPTION SELECT ----
+  const handleOptionSelect = async (option) => {
     dismissPopup();
     setSelectedOption(option);
     if (currentClaim) {
       updateClaim(currentClaim.id, { claim_type: option });
     }
-    setStep(STEP_TYPES.TRANSACTION);
+
+    if (option === CLAIM_TYPE.REPAIR) {
+      try {
+        const response = await checkExcess(currentClaim.msisdn, currentClaim.insuranceClaimDate);
+        if (response.success && response.data) {
+          // Excess exists – pre‑fill the amount
+          setExcessData(response.data);
+          setTxData(prev => ({
+            ...prev,
+            faultDate: response.data.faultDate || '',
+            excessAmount: response.data.excessAmount || response.data.repairAmount || ''
+          }));
+          setStep(STEP_TYPES.TRANSACTION);
+        } else {
+          // No excess – show message and stay on details
+          alert(`❌ ${response.message || 'No repair transaction details for this claim. Please ask Customer Care to add the repair amount first.'}`);
+          setStep(STEP_TYPES.DETAILS);
+        }
+      } catch (error) {
+        console.error('Error checking excess:', error);
+        alert('❌ Could not check repair details. Please try again.');
+        setStep(STEP_TYPES.DETAILS);
+      }
+    } else {
+      // Replacement – go directly to transaction
+      setStep(STEP_TYPES.TRANSACTION);
+    }
   };
 
   // ---- TX DATA CHANGE ----
   const handleTxChange = (e) => {
     const { name, value } = e.target;
     setTxData(prev => ({ ...prev, [name]: value }));
+
+    // Auto‑extract date from the appropriate transaction ID
+    let extractedDate = '';
     if (name === 'txId' && value.length >= 8) {
-      const extracted = extractDateFromTxId(value);
-      if (extracted) {
-        setTxData(prev => ({ ...prev, date: extracted }));
-      }
+      // For Repair: main transaction ID
+      extractedDate = extractDateFromTxId(value);
+    } else if (name === 'excessFeeTxId' && value.length >= 8) {
+      // For Replacement: excess fee transaction ID
+      extractedDate = extractDateFromTxId(value);
+    }
+
+    if (extractedDate) {
+      setTxData(prev => ({ ...prev, date: extractedDate }));
     }
   };
 
@@ -172,10 +199,6 @@ const Representative = () => {
       alert('Please select a fault date');
       return;
     }
-    if (!txData.txId) {
-      alert('Please enter a transaction ID');
-      return;
-    }
 
     const agentName = user?.fullName || user?.username || 'Agent';
     if (!agentName.trim()) {
@@ -183,26 +206,61 @@ const Representative = () => {
       return;
     }
 
+    // For replacement
+    if (selectedOption === CLAIM_TYPE.REPLACEMENT) {
+      // Excess fee TID is required (if excess amount exists)
+      if (calculatedExcess && !txData.excessFeeTxId) {
+        alert('Please enter the Excess Fee Transaction ID');
+        return;
+      }
+      // If top‑up amount is entered, top‑up TID is required
+      if (txData.topupAmount && !txData.topupTxId) {
+        alert('Please enter the Top‑up Transaction ID');
+        return;
+      }
+      if (txData.topupTxId && !txData.topupAmount) {
+        alert('Please enter the Top‑up Amount');
+        return;
+      }
+    }
+
+    // For repair
+    if (selectedOption === CLAIM_TYPE.REPAIR) {
+      if (!txData.txId) {
+        alert('Please enter a transaction ID');
+        return;
+      }
+      // We already have excessAmount from the check, so we don't need to validate it.
+    }
+
     // Build payload
     const payload = {
       msisdn: currentClaim.msisdn,
-      excessTid: txData.txId,
       faultDate: txData.faultDate,
       agentName: agentName
     };
 
-    // For replacement, if excess fee amount and its transaction ID are provided, send as top-up
     if (selectedOption === CLAIM_TYPE.REPLACEMENT) {
-      const excessAmount = parseFloat(calculatedExcess);
-      const excessFeeTxId = txData.excessFeeTxId?.trim();
-      if (!isNaN(excessAmount) && excessAmount > 0 && excessFeeTxId) {
-        payload.topupAmount = excessAmount;
-        payload.topupTid = excessFeeTxId;
+      // Excess TID is required if excess exists (calculatedExcess is not null)
+      if (calculatedExcess) {
+        payload.excessTid = txData.excessFeeTxId.trim();
+        // The excess amount is calculated automatically by the backend? Actually we send topupAmount as optional.
+        // The backend expects topupTid and topupAmount for the optional top-up.
+        // The main excess is handled by the backend via the excessTid? According to documentation, 
+        // POST /agent/replacement-payment expects excessTid (required) and optional topupTid/topupAmount.
+        // So we send excessTid from the excessFeeTxId field, and topup if provided.
+        if (txData.topupAmount && txData.topupTxId) {
+          payload.topupAmount = parseFloat(txData.topupAmount);
+          payload.topupTid = txData.topupTxId.trim();
+        }
+      } else {
+        alert('No excess amount calculated. Please select a fault date.');
+        return;
       }
-    }
-
-    if (selectedOption === CLAIM_TYPE.REPAIR) {
+    } else {
+      // Repair
       payload.insuranceClaimDate = currentClaim.insuranceClaimDate;
+      payload.excessTid = txData.txId.trim();
     }
 
     try {
@@ -231,10 +289,13 @@ const Representative = () => {
     setCurrentClaim(null);
     setSelectedOption(null);
     setCalculatedExcess(null);
+    setExcessData(null);
     setTxData({
       faultDate: '',
       txId: '',
       excessFeeTxId: '',
+      topupAmount: '',
+      topupTxId: '',
       date: '',
       agentName: '',
       excessAmount: ''
@@ -268,6 +329,10 @@ const Representative = () => {
         );
       case STEP_TYPES.TRANSACTION:
         const isRepair = selectedOption === CLAIM_TYPE.REPAIR;
+        // For repair, pre‑fill the amount from the check-excess response
+        const prefilledAmount = isRepair && excessData ? excessData.excessAmount || excessData.repairAmount : '';
+        // For replacement, use calculatedExcess for the auto‑calculated field (shown as read-only)
+        const calcAmount = isRepair ? '' : (calculatedExcess || '');
         return (
           <>
             <SearchBar value={searchValue} onChange={setSearchValue} onSearch={handleSearch} isLoading={isLoading} />
@@ -277,10 +342,11 @@ const Representative = () => {
               onChange={handleTxChange}
               onSubmit={handleSubmitTx}
               onCancel={handleCancel}
-              title={isRepair ? 'Add Payment Details (Repair)' : 'Add Payment Details '}
+              title={isRepair ? 'Add Payment Details (Repair)' : 'Add Payment Details (Replacement)'}
               agentName={user?.fullName || user?.username || 'Agent'}
-              calculatedExcessAmount={calculatedExcess}
+              calculatedExcessAmount={calcAmount}
               isCalculating={isCalculating}
+              prefilledExcessAmount={prefilledAmount}
             />
           </>
         );

@@ -19,14 +19,14 @@ const TransactionForm = ({
     onChange({ target: { name, value } });
   };
 
-  // ---- CUSTOMER CARE: Amount + Fault Date ----
+  // ---- CUSTOMER CARE ----
   if (isCare) {
     return (
       <div className="claim-card transaction-container">
         <div className="transaction-title">{title}</div>
         <div className="tx-form">
           <div className="field">
-            <label>Amount *</label>
+            <label>Repair Amount *</label>
             <input
               type="text"
               name="amount"
@@ -75,12 +75,12 @@ const TransactionForm = ({
     );
   }
 
-  // ---- REPRESENTATIVE: full form (unchanged) ----
+  // ---- REPRESENTATIVE ----
   return (
     <div className="claim-card transaction-container">
       <div className="transaction-title">{title}</div>
       <div className="tx-form">
-        {/* Fault Date – only for Replacement */}
+        {/* ---- Fault Date – only for Replacement ---- */}
         {!isRepair && (
           <div className="field">
             <label>Fault Date *</label>
@@ -94,59 +94,37 @@ const TransactionForm = ({
           </div>
         )}
 
-        {/* Transaction Amount */}
-        <div className="field">
-          <label>
-            {isRepair ? 'Excess Amount (auto-filled)' : 'Transaction Amount *'}
-          </label>
-          <input
-            type="text"
-            name="excessAmount"
-            value={txData.excessAmount || ''}
-            onChange={isRepair ? undefined : handleInputChange}
-            readOnly={isRepair}
-            placeholder={isRepair ? 'Auto-filled from system' : 'Enter amount'}
-            className={isRepair ? 'readonly' : ''}
-            required={!isRepair}
-          />
-        </div>
-
-        {/* Transaction ID */}
-        <div className="field">
-          <label>Transaction ID *</label>
-          <input
-            type="text"
-            name="txId"
-            value={txData.txId || ''}
-            onChange={handleInputChange}
-         //   placeholder="e.g., MP260610.2000.X08195"
-            required
-          />
-        </div>
-
-        {/* Transaction Date – auto‑extracted */}
-        <div className="field">
-          <label>Transaction Date</label>
-          <input
-            type="text"
-            name="date"
-            value={txData.date || ''}
-            readOnly
-            className="readonly"
-          //  placeholder="Auto-extracted from Transaction ID"
-          />
-          {txData.date && (
-            <div className="helper-text success">
-              <i className="fas fa-check-circle"></i> Auto-extracted
-            </div>
-          )}
-        </div>
-
-        {/* ---- EXCESS FEE AMOUNT & ITS TRANSACTION ID (only for Replacement) ---- */}
-        {!isRepair && (
+        {isRepair ? (
+          // ---- REPAIR: single amount + TID ----
           <>
             <div className="field">
-              <label>Excess Fee Amount</label>
+              <label>Excess Amount (auto-filled)</label>
+              <input
+                type="text"
+                name="excessAmount"
+                value={txData.excessAmount || ''}
+                readOnly
+                className="readonly"
+              />
+            </div>
+            <div className="field">
+              <label>Transaction ID *</label>
+              <input
+                type="text"
+                name="txId"
+                value={txData.txId || ''}
+                onChange={handleInputChange}
+                placeholder="e.g., MP260610.2000.X08195"
+                required
+              />
+            </div>
+          </>
+        ) : (
+          // ---- REPLACEMENT: excess (required) + top‑up (optional) ----
+          <>
+            {/* Excess Amount (auto-calculated, read-only) */}
+            <div className="field">
+              <label>Excess Amount </label>
               <input
                 type="text"
                 value={
@@ -171,21 +149,70 @@ const TransactionForm = ({
               )}
             </div>
 
-            {/* Excess Fee Transaction ID (Optional) */}
+            {/* Excess Fee Transaction ID (required) */}
             <div className="field">
-              <label>Excess Fee Transaction ID (Optional)</label>
+              <label>Excess Fee Transaction ID *</label>
               <input
                 type="text"
                 name="excessFeeTxId"
                 value={txData.excessFeeTxId || ''}
                 onChange={handleInputChange}
               //  placeholder="Enter transaction ID for excess fee"
+                required={!!(txData.faultDate && calculatedExcessAmount)}
               />
+              {txData.faultDate && calculatedExcessAmount && !txData.excessFeeTxId && (
+                <div className="helper-text error"></div>
+              )}
+            </div>
+
+            {/* Top‑up Amount (optional) */}
+            <div className="field">
+              <label>Top‑up Amount</label>
+              <input
+                type="text"
+                name="topupAmount"
+                value={txData.topupAmount || ''}
+                onChange={handleInputChange}
+             //   placeholder="e.g., 3000"
+              />
+            </div>
+
+            {/* Top‑up Transaction ID */}
+            <div className="field">
+              <label>Top‑up Transaction ID</label>
+              <input
+                type="text"
+                name="topupTxId"
+                value={txData.topupTxId || ''}
+                onChange={handleInputChange}
+              //  placeholder="e.g., MP260611.3000.X08196"
+              />
+              {txData.topupAmount && !txData.topupTxId && (
+                <div className="helper-text error">Required if top‑up amount is entered</div>
+              )}
             </div>
           </>
         )}
 
-        {/* Agent Name – AUTO-FILLED & READ-ONLY */}
+        {/* ---- Transaction Date – auto‑extracted (for both repair and replacement) ---- */}
+        <div className="field">
+          <label>Transaction Date</label>
+          <input
+            type="text"
+            name="date"
+            value={txData.date || ''}
+            readOnly
+            className="readonly"
+           // placeholder="Auto-extracted from Transaction ID"
+          />
+          {txData.date && (
+            <div className="helper-text success">
+              {/*<i className="fas fa-check-circle"></i> Auto-extracted*/}
+            </div>
+          )}
+        </div>
+
+        {/* ---- Agent Name – AUTO-FILLED & READ-ONLY ---- */}
         <div className="field">
           <label>Agent Name</label>
           <input

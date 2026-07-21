@@ -25,10 +25,9 @@ const CustomerCare = () => {
   const [step, setStep] = useState(STEP_TYPES.SEARCH);
   const [txData, setTxData] = useState({
     amount: '',
-    faultDate: ''    // added fault date
+    faultDate: ''
   });
 
-  // Helper: create a mock claim (fallback for 403)
   const createMockClaim = (msisdn) => ({
     id: Date.now(),
     covernoteRefNumber: 'MOCK-123456',
@@ -68,7 +67,6 @@ const CustomerCare = () => {
         setStep(STEP_TYPES.DETAILS);
       }
     } catch (error) {
-      // Fallback to mock on 403
       if (error.message.includes('403') || error.message.includes('Forbidden')) {
         console.warn('⚠️ Customer Care search fallback to mock data.');
         const mockClaim = createMockClaim(searchValue.trim());
@@ -91,12 +89,10 @@ const CustomerCare = () => {
   };
 
   const handleSubmitTx = async () => {
-    // Validate amount
     if (!txData.amount || parseFloat(txData.amount) <= 0) {
-      alert('Please enter a valid amount');
+      alert('Please enter a valid repair amount');
       return;
     }
-    // Validate fault date
     if (!txData.faultDate) {
       alert('Please select a fault date');
       return;
@@ -108,20 +104,19 @@ const CustomerCare = () => {
     }
 
     try {
-      // Pass amount as excessAmount and fault date in notes
       await addExcess(
         currentClaim.msisdn,
         currentClaim.insuranceClaimDate,
         parseFloat(txData.amount),
-        `Fault Date: ${txData.faultDate}`
+        txData.faultDate,
+        'Added by Customer Care'
       );
-      alert('✅ Repair payment recorded successfully!');
+      alert('✅ Repair amount recorded successfully!');
       resetFlow();
     } catch (error) {
-      // Fallback on 403 – simulate success
       if (error.message.includes('403') || error.message.includes('Forbidden')) {
         console.warn('⚠️ Customer Care submit fallback – simulating success.');
-        alert('✅ Repair payment recorded successfully (demo mode).');
+        alert('✅ Repair amount recorded successfully (demo mode).');
         resetFlow();
       } else {
         alert('Error: ' + error.message);
