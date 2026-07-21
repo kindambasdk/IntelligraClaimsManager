@@ -36,6 +36,7 @@ const ClaimCard = ({ claim, representative, onAddPayment, onOptionSelect, popupV
   const imei = claim.imeiNumber || 'N/A';
   const model = claim.model || 'N/A';
   const claimDate = claim.insuranceClaimDate || 'N/A';
+  const policyDate = claim.policyCreatedDate || 'N/A';   // NEW: Policy Created Date
   const program = claim.program || 'N/A';
   const rep = representative || claim.representative || 'Unassigned';
 
@@ -65,7 +66,6 @@ const ClaimCard = ({ claim, representative, onAddPayment, onOptionSelect, popupV
     if (onOptionSelect) onOptionSelect(option);
   };
 
-  // Options for the popup
   const popupOptions = isCare ? ['Repair'] : ['Replacement', 'Repair'];
 
   return (
@@ -109,13 +109,19 @@ const ClaimCard = ({ claim, representative, onAddPayment, onOptionSelect, popupV
         <span className="value">{formatDate(claimDate)}</span>
       </div>
 
+      {/* NEW: Policy Created Date */}
+      <div className="claim-detail">
+        <span className="label">Policy Created Date</span>
+        <span className="value">{formatDate(policyDate)}</span>
+      </div>
+
       {/* Program */}
       <div className="claim-detail">
         <span className="label">Program</span>
         <span className="value">{program}</span>
       </div>
 
-      {/* Agent (optional – you can remove if not needed) */}
+      {/* Agent */}
       <div className="claim-detail">
         <span className="label">Agent</span>
         <span className="value">{rep}</span>

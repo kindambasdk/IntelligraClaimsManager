@@ -21,9 +21,13 @@ const CustomerCare = () => {
     claims
   } = useClaim();
 
-  const [searchValue, setSearchValue] = useState('255685968876');
+  const [searchValue, setSearchValue] = useState('');
   const [step, setStep] = useState(STEP_TYPES.SEARCH);
-  const [txData, setTxData] = useState({ txId: '' });
+  // Add amount field to state
+  const [txData, setTxData] = useState({
+    amount: '',
+    txId: ''
+  });
 
   const handleSearch = async () => {
     if (!searchValue.trim()) return;
@@ -38,7 +42,7 @@ const CustomerCare = () => {
       if (data) {
         const newClaim = {
           ...data,
-          representative: user?.name || 'Shabani',
+          representative: user?.fullName || user?.username || 'Shabani',
           status: CLAIM_STATUS.PENDING,
           claim_type: CLAIM_TYPE.REPAIR,
           claim_subtype: CLAIM_SUBTYPE.NORMAL
@@ -61,6 +65,12 @@ const CustomerCare = () => {
   };
 
   const handleSubmitTx = async () => {
+    // Validate amount
+    if (!txData.amount || parseFloat(txData.amount) <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+    // Validate transaction ID
     if (!txData.txId || txData.txId.trim() === '') {
       alert('Please enter a transaction ID');
       return;
@@ -72,13 +82,14 @@ const CustomerCare = () => {
     }
 
     try {
+      // Pass amount as excessAmount and store TID in notes
       await addExcess(
         currentClaim.msisdn,
         currentClaim.insuranceClaimDate,
-        0,
+        parseFloat(txData.amount),
         `Transaction ID: ${txData.txId.trim()}`
       );
-      alert('✅ Transaction ID recorded successfully!');
+      alert('✅ Repair payment recorded successfully!');
       resetFlow();
     } catch (error) {
       alert('Error: ' + error.message);
@@ -90,7 +101,10 @@ const CustomerCare = () => {
   const resetFlow = () => {
     setStep(STEP_TYPES.SEARCH);
     setCurrentClaim(null);
-    setTxData({ txId: '' });
+    setTxData({
+      amount: '',
+      txId: ''
+    });
   };
 
   const renderContent = () => {
@@ -108,7 +122,7 @@ const CustomerCare = () => {
             <SearchBar value={searchValue} onChange={setSearchValue} onSearch={handleSearch} isLoading={isLoading} />
             <ClaimCard
               claim={currentClaim}
-              representative={user?.name || 'Shabani'}
+              representative={user?.fullName || user?.username || 'Shabani'}
               onAddPayment={handleAddPayment}
               isCare={true}
             />
@@ -125,7 +139,7 @@ const CustomerCare = () => {
               onChange={handleTxChange}
               onSubmit={handleSubmitTx}
               onCancel={handleCancel}
-              agentName={user?.fullName || user?.username || 'Agent'} // <-- Auto-fill from logged-in user
+              agentName={user?.fullName || user?.username || 'Agent'}
             />
           </>
         );

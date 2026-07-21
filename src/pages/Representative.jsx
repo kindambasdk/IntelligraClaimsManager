@@ -1,5 +1,5 @@
 // src/pages/Representative.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.js';
 import { useClaim } from '../hooks/useClaim.js';
 import { useAutoDismiss } from '../hooks/useTimer.js';
@@ -9,6 +9,7 @@ import EmptyState from '../components/common/EmptyState.jsx';
 import TransactionForm from '../components/common/TransactionForm.jsx';
 import { STEP_TYPES } from '../constants/roles.js';
 import { CLAIM_STATUS, CLAIM_TYPE, CLAIM_SUBTYPE } from '../constants/claimStatus.js';
+import api from '../services/api';
 import './Representative.css';
 
 const Representative = () => {
@@ -26,21 +27,58 @@ const Representative = () => {
     error
   } = useClaim();
 
-  const [searchValue, setSearchValue] = useState('255685968876');
+  const [searchValue, setSearchValue] = useState('');
   const [step, setStep] = useState(STEP_TYPES.SEARCH);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [calculatedExcess, setCalculatedExcess] = useState(null);
 
   const [txData, setTxData] = useState({
     faultDate: '',
     txId: '',
-    additionalFeeAmount: '',
-    additionalFeeTxId: '',
+    excessFeeTxId: '',   // NEW
     date: '',
-    agentName: ''
+    agentName: '',
+    excessAmount: ''     // manual transaction amount (for replacement)
   });
 
   const { isVisible: isPopupVisible, show: showPopup, dismiss: dismissPopup, progress: popupProgress } = useAutoDismiss(4000);
 
+  // ---- EFFECT: calculate excess when faultDate changes (only for Replacement) ----
+  useEffect(() => {
+    const fetchExcess = async () => {
+      if (!currentClaim || !txData.faultDate || selectedOption !== CLAIM_TYPE.REPLACEMENT) {
+        setCalculatedExcess(null);
+        return;
+      }
+      setIsCalculating(true);
+      try {
+        const response = await api.calculateExcess(currentClaim.msisdn, txData.faultDate);
+        console.log('📦 Excess API Response:', response);
+
+        let amount = null;
+        if (response.data !== undefined && response.data !== null) {
+          amount = response.data;
+        }
+
+        if (amount !== null && amount !== undefined) {
+          setCalculatedExcess(amount.toString());
+        } else {
+          setCalculatedExcess(null);
+        }
+      } catch (error) {
+        console.error('Error calculating excess:', error);
+        setCalculatedExcess(null);
+      } finally {
+        setIsCalculating(false);
+      }
+    };
+
+    const timer = setTimeout(fetchExcess, 300);
+    return () => clearTimeout(timer);
+  }, [currentClaim, txData.faultDate, selectedOption]);
+
+  // ---- SEARCH HANDLER ----
   const handleSearch = async () => {
     if (!searchValue.trim()) return;
     try {
@@ -54,7 +92,7 @@ const Representative = () => {
       if (data) {
         const newClaim = {
           ...data,
-          representative: user?.name || 'Shabani',
+          representative: user?.fullName || user?.username || 'Shabani',
           status: CLAIM_STATUS.PENDING
         };
         setCurrentClaim(newClaim);
@@ -81,10 +119,12 @@ const Representative = () => {
     }
   };
 
+  // ---- ADD PAYMENT ----
   const handleAddPayment = () => {
     showPopup();
   };
 
+  // ---- OPTION SELECT (Replacement or Repair) ----
   const handleOptionSelect = (option) => {
     dismissPopup();
     setSelectedOption(option);
@@ -94,6 +134,7 @@ const Representative = () => {
     setStep(STEP_TYPES.TRANSACTION);
   };
 
+  // ---- TX DATA CHANGE ----
   const handleTxChange = (e) => {
     const { name, value } = e.target;
     setTxData(prev => ({ ...prev, [name]: value }));
@@ -105,6 +146,7 @@ const Representative = () => {
     }
   };
 
+  // ---- EXTRACT DATE FROM TRANSACTION ID ----
   const extractDateFromTxId = (txId) => {
     const match = txId.match(/^[A-Z]{2}(\d{2})(\d{2})(\d{2})/);
     if (match) {
@@ -123,6 +165,7 @@ const Representative = () => {
     return null;
   };
 
+  // ---- SUBMIT TRANSACTION ----
   const handleSubmitTx = async () => {
     // Common validations
     if (!txData.faultDate) {
@@ -133,34 +176,28 @@ const Representative = () => {
       alert('Please enter a transaction ID');
       return;
     }
-    // Agent name is auto-filled, but we keep a safety check
-    if (!txData.agentName.trim()) {
+
+    const agentName = user?.fullName || user?.username || 'Agent';
+    if (!agentName.trim()) {
       alert('Agent name is required. Please log in again.');
       return;
     }
 
-    if (selectedOption === CLAIM_TYPE.REPLACEMENT) {
-      if (txData.additionalFeeAmount && !txData.additionalFeeTxId) {
-        alert('Please enter the top‑up transaction ID');
-        return;
-      }
-      if (txData.additionalFeeTxId && !txData.additionalFeeAmount) {
-        alert('Please enter the top‑up amount');
-        return;
-      }
-    }
-
+    // Build payload
     const payload = {
       msisdn: currentClaim.msisdn,
       excessTid: txData.txId,
       faultDate: txData.faultDate,
-      agentName: txData.agentName.trim()
+      agentName: agentName
     };
 
+    // For replacement, if excess fee amount and its transaction ID are provided, send as top-up
     if (selectedOption === CLAIM_TYPE.REPLACEMENT) {
-      if (txData.additionalFeeAmount && txData.additionalFeeTxId) {
-        payload.topupTid = txData.additionalFeeTxId;
-        payload.topupAmount = parseFloat(txData.additionalFeeAmount);
+      const excessAmount = parseFloat(calculatedExcess);
+      const excessFeeTxId = txData.excessFeeTxId?.trim();
+      if (!isNaN(excessAmount) && excessAmount > 0 && excessFeeTxId) {
+        payload.topupAmount = excessAmount;
+        payload.topupTid = excessFeeTxId;
       }
     }
 
@@ -185,23 +222,27 @@ const Representative = () => {
     }
   };
 
+  // ---- CANCEL ----
   const handleCancel = () => resetFlow();
 
+  // ---- RESET FLOW ----
   const resetFlow = () => {
     setStep(STEP_TYPES.SEARCH);
     setCurrentClaim(null);
     setSelectedOption(null);
+    setCalculatedExcess(null);
     setTxData({
       faultDate: '',
       txId: '',
-      additionalFeeAmount: '',
-      additionalFeeTxId: '',
+      excessFeeTxId: '',
       date: '',
-      agentName: ''
+      agentName: '',
+      excessAmount: ''
     });
     dismissPopup();
   };
 
+  // ---- RENDER CONTENT ----
   const renderContent = () => {
     switch (step) {
       case STEP_TYPES.SEARCH:
@@ -217,7 +258,7 @@ const Representative = () => {
             <SearchBar value={searchValue} onChange={setSearchValue} onSearch={handleSearch} isLoading={isLoading} />
             <ClaimCard
               claim={currentClaim}
-              representative={user?.name || 'Shabani'}
+              representative={user?.fullName || user?.username || 'Shabani'}
               onAddPayment={handleAddPayment}
               onOptionSelect={handleOptionSelect}
               popupVisible={isPopupVisible}
@@ -236,8 +277,10 @@ const Representative = () => {
               onChange={handleTxChange}
               onSubmit={handleSubmitTx}
               onCancel={handleCancel}
-              title={isRepair ? 'Add Payment Details (Repair)' : 'Add Payment Details (Replacement)'}
-              agentName={user?.fullName || user?.username || 'Agent'} // <-- Auto-fill from logged-in user
+              title={isRepair ? 'Add Payment Details (Repair)' : 'Add Payment Details '}
+              agentName={user?.fullName || user?.username || 'Agent'}
+              calculatedExcessAmount={calculatedExcess}
+              isCalculating={isCalculating}
             />
           </>
         );

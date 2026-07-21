@@ -20,21 +20,21 @@ export function ClaimProvider({ children }) {
       const data = response.data;
 
       const claim = {
-        id: Date.now(),
-        covernoteRefNumber: data.covernoteRefNumber || 'N/A',
-        msisdn: data.msisdn || msisdn,
-        customerName: data.customerName || 'Unknown',
-        imeiNumber: data.imeiNumber || 'N/A',
-        model: data.model || 'N/A',
-        brand: data.brand || 'N/A',
-        policyCreatedDate: data.policyCreatedDate || null,
-        rrp: data.rrp || 0,
-        insuranceCoverPaidAmount: data.insuranceCoverPaidAmount || data.insuranceCoverAmount || 0,
-        insuranceClaimDate: data.insuranceClaimDate || null,
-        program: data.program || 'N/A',
-        status: CLAIM_STATUS.PENDING,
-        isMock: false
-      };
+  id: Date.now(),
+  covernoteRefNumber: data.covernoteRefNumber || 'N/A',
+  msisdn: data.msisdn || msisdn,
+  customerName: data.customerName || 'Unknown',
+  imeiNumber: data.imeiNumber || 'N/A',
+  model: data.model || 'N/A',
+  brand: data.brand || 'N/A',
+  policyCreatedDate: data.policyCreatedDate || null,   // <-- already present
+  rrp: data.rrp || 0,
+  insuranceCoverPaidAmount: data.insuranceCoverPaidAmount || data.insuranceCoverAmount || 0,
+  insuranceClaimDate: data.insuranceClaimDate || null,
+  program: data.program || 'N/A',
+  status: CLAIM_STATUS.PENDING,
+  isMock: false
+};
       setCurrentClaim(claim);
       setClaims(prev => [...prev, claim]);
       return claim;

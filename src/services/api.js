@@ -23,7 +23,7 @@ class ApiClient {
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'ngrok-skip-browser-warning': 'true', // <-- ADDED
+      'ngrok-skip-browser-warning': 'true',
     };
     if (includeAuth) {
       const token = this.getToken();
@@ -81,7 +81,7 @@ class ApiClient {
 
   async _requestBlob(endpoint) {
     const url = `${AUTH_API_BASE}${endpoint}`;
-    const headers = this.getHeaders(true); // includes ngrok header
+    const headers = this.getHeaders(true);
     const response = await fetch(url, { method: 'GET', headers });
     if (!response.ok) {
       const text = await response.text();
@@ -112,7 +112,7 @@ class ApiClient {
 
   // ---------- AUTH ----------
   login(username, password) {
-    const headers = this.getHeaders(false); // no auth needed
+    const headers = this.getHeaders(false);
     return fetch(`${AUTH_API_BASE}/auth/login`, {
       method: 'POST',
       headers,
@@ -147,6 +147,11 @@ class ApiClient {
   // ---------- AGENT ----------
   searchCustomer(msisdn) {
     return this._request(`/agent/customer/${msisdn}`);
+  }
+
+  // NEW: Calculate excess amount based on fault date
+  calculateExcess(msisdn, faultDate) {
+    return this._request(`/agent/calculate-excess/${msisdn}/${faultDate}`);
   }
 
   createReplacementPayment(payload) {

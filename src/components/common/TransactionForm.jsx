@@ -3,27 +3,39 @@ import React from 'react';
 import './TransactionForm.css';
 
 const TransactionForm = ({
-  isCare,                   // true for Customer Care
-  isRepair,                 // true for Representative Repair
+  isCare,
+  isRepair,
   title,
   txData,
   onChange,
   onSubmit,
   onCancel,
-  prefilledExcessAmount,    // used only for Representative Repair
-  agentName                 // <-- NEW: logged-in user's name
+  calculatedExcessAmount,
+  agentName,
+  isCalculating
 }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     onChange({ target: { name, value } });
   };
 
-  // ---- CUSTOMER CARE: only transaction ID ----
+  // ---- CUSTOMER CARE ----
   if (isCare) {
     return (
       <div className="claim-card transaction-container">
         <div className="transaction-title">{title}</div>
         <div className="tx-form">
+          <div className="field">
+            <label>Amount *</label>
+            <input
+              type="text"
+              name="amount"
+              value={txData.amount || ''}
+              onChange={handleInputChange}
+              placeholder="Enter repair cost"
+              required
+            />
+          </div>
           <div className="field">
             <label>Transaction ID *</label>
             <input
@@ -35,13 +47,27 @@ const TransactionForm = ({
               required
             />
           </div>
+          <div className="field">
+            <label>Agent Name</label>
+            <input
+              type="text"
+              value={agentName || txData.agentName || ''}
+              readOnly
+              className="readonly"
+            />
+          </div>
           <div className="form-actions">
             <button type="button" className="btn-outline" onClick={onCancel}>Cancel</button>
             <button
               type="button"
               className="submit-btn"
               onClick={onSubmit}
-              disabled={!txData.txId || txData.txId.trim() === ''}
+              disabled={
+                !txData.amount ||
+                parseFloat(txData.amount) <= 0 ||
+                !txData.txId ||
+                txData.txId.trim() === ''
+              }
             >
               <i className="fas fa-check"></i> Submit
             </button>
@@ -51,7 +77,7 @@ const TransactionForm = ({
     );
   }
 
-  // ---- REPRESENTATIVE: full form (Repair or Replacement) ----
+  // ---- REPRESENTATIVE ----
   return (
     <div className="claim-card transaction-container">
       <div className="transaction-title">{title}</div>
@@ -70,16 +96,18 @@ const TransactionForm = ({
           </div>
         )}
 
-        {/* Excess Amount */}
+        {/* Transaction Amount */}
         <div className="field">
-          <label>{isRepair ? 'Excess Amount (auto-filled)' : 'Excess Amount *'}</label>
+          <label>
+            {isRepair ? 'Excess Amount (auto-filled)' : 'Transaction Amount *'}
+          </label>
           <input
             type="text"
             name="excessAmount"
-            value={isRepair ? prefilledExcessAmount : txData.excessAmount}
+            value={txData.excessAmount || ''}
             onChange={isRepair ? undefined : handleInputChange}
             readOnly={isRepair}
-           // placeholder={isRepair ? 'Auto-filled from system' : 'Enter excess amount'}
+            placeholder={isRepair ? 'Auto-filled from system' : 'Enter amount'}
             className={isRepair ? 'readonly' : ''}
             required={!isRepair}
           />
@@ -107,31 +135,53 @@ const TransactionForm = ({
             value={txData.date || ''}
             readOnly
             className="readonly"
-           // placeholder="Auto‑extracted from Transaction ID" 
+           // placeholder="Auto-extracted from Transaction ID"
           />
+          {txData.date && (
+            <div className="helper-text success">
+              <i className="fas fa-check-circle"></i> Auto-extracted
+            </div>
+          )}
         </div>
 
-        {/* Additional Fee fields – only for Replacement, optional */}
+        {/* ---- EXCESS FEE AMOUNT & ITS TRANSACTION ID (only for Replacement) ---- */}
         {!isRepair && (
           <>
             <div className="field">
-              <label>Additional Fee Amount (Optional)</label>
+              <label>Excess Fee Amount </label>
               <input
                 type="text"
-                name="additionalFeeAmount"
-                value={txData.additionalFeeAmount || ''}
-                onChange={handleInputChange}
-                // placeholder="e.g., 25000"
+                value={
+                  txData.faultDate && calculatedExcessAmount
+                    ? calculatedExcessAmount
+                    : ''
+                }
+                readOnly
+                className="readonly"
+                placeholder={
+                  isCalculating
+                    ? 'Calculating...'
+                    : txData.faultDate
+                      ? 'Auto-calculated'
+                      : 'Select fault date first'
+                }
               />
+              {isCalculating && (
+                <div className="helper-text">
+                  <i className="fas fa-spinner fa-spin"></i> Calculating...
+                </div>
+              )}
             </div>
+
+            {/* New field: Excess Fee Transaction ID (Optional) */}
             <div className="field">
-              <label>Additional Fee Transaction ID (Optional)</label>
+              <label>Excess Fee Transaction ID (Optional)</label>
               <input
                 type="text"
-                name="additionalFeeTxId"
-                value={txData.additionalFeeTxId || ''}
+                name="excessFeeTxId"
+                value={txData.excessFeeTxId || ''}
                 onChange={handleInputChange}
-                // placeholder="e.g., MP260611.3000.X08196"
+               // placeholder="Enter transaction ID for excess fee"
               />
             </div>
           </>
@@ -142,11 +192,9 @@ const TransactionForm = ({
           <label>Agent Name</label>
           <input
             type="text"
-            name="agentName"
             value={agentName || txData.agentName || ''}
             readOnly
             className="readonly"
-            //placeholder="Auto-filled from login"
           />
         </div>
 
