@@ -19,7 +19,7 @@ const TransactionForm = ({
     onChange({ target: { name, value } });
   };
 
-  // ---- CUSTOMER CARE ----
+  // ---- CUSTOMER CARE: Amount + Fault Date ----
   if (isCare) {
     return (
       <div className="claim-card transaction-container">
@@ -37,13 +37,12 @@ const TransactionForm = ({
             />
           </div>
           <div className="field">
-            <label>Transaction ID *</label>
+            <label>Fault Date *</label>
             <input
-              type="text"
-              name="txId"
-              value={txData.txId || ''}
+              type="date"
+              name="faultDate"
+              value={txData.faultDate || ''}
               onChange={handleInputChange}
-              placeholder="Enter transaction ID"
               required
             />
           </div>
@@ -65,8 +64,7 @@ const TransactionForm = ({
               disabled={
                 !txData.amount ||
                 parseFloat(txData.amount) <= 0 ||
-                !txData.txId ||
-                txData.txId.trim() === ''
+                !txData.faultDate
               }
             >
               <i className="fas fa-check"></i> Submit
@@ -77,7 +75,7 @@ const TransactionForm = ({
     );
   }
 
-  // ---- REPRESENTATIVE ----
+  // ---- REPRESENTATIVE: full form (unchanged) ----
   return (
     <div className="claim-card transaction-container">
       <div className="transaction-title">{title}</div>
@@ -121,7 +119,7 @@ const TransactionForm = ({
             name="txId"
             value={txData.txId || ''}
             onChange={handleInputChange}
-           // placeholder="e.g., MP260610.2000.X08195"
+         //   placeholder="e.g., MP260610.2000.X08195"
             required
           />
         </div>
@@ -135,7 +133,7 @@ const TransactionForm = ({
             value={txData.date || ''}
             readOnly
             className="readonly"
-           // placeholder="Auto-extracted from Transaction ID"
+          //  placeholder="Auto-extracted from Transaction ID"
           />
           {txData.date && (
             <div className="helper-text success">
@@ -148,7 +146,7 @@ const TransactionForm = ({
         {!isRepair && (
           <>
             <div className="field">
-              <label>Excess Fee Amount </label>
+              <label>Excess Fee Amount</label>
               <input
                 type="text"
                 value={
@@ -173,7 +171,7 @@ const TransactionForm = ({
               )}
             </div>
 
-            {/* New field: Excess Fee Transaction ID (Optional) */}
+            {/* Excess Fee Transaction ID (Optional) */}
             <div className="field">
               <label>Excess Fee Transaction ID (Optional)</label>
               <input
@@ -181,7 +179,7 @@ const TransactionForm = ({
                 name="excessFeeTxId"
                 value={txData.excessFeeTxId || ''}
                 onChange={handleInputChange}
-               // placeholder="Enter transaction ID for excess fee"
+              //  placeholder="Enter transaction ID for excess fee"
               />
             </div>
           </>
