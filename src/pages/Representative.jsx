@@ -139,7 +139,7 @@ const Representative = () => {
           setStep(STEP_TYPES.TRANSACTION);
         } else {
           // No excess – show message and stay on details
-          alert(`❌ ${response.message || 'No repair transaction details for this claim. Please ask Customer Care to add the repair amount first.'}`);
+          alert(`❌ ${response.message || 'Error: Excess amount has not been added by Customer Care yet'}`);
           setStep(STEP_TYPES.DETAILS);
         }
       } catch (error) {
