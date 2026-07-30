@@ -11,12 +11,26 @@ export function ClaimProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ---------- FETCH CLAIM ----------
+  // ---------- FETCH CLAIM (UPDATED: Role-Based) ----------
   const fetchClaim = async (msisdn) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.searchCustomer(msisdn);
+      // Get the user's role from localStorage
+      const user = JSON.parse(localStorage.getItem('user'));
+      const role = user?.role;
+      
+      // Use endpoint based on role
+      let response;
+      if (role === 'agent') {
+        response = await api.searchCustomer(msisdn);
+      } else if (role === 'customer_care') {
+        response = await api.searchCustomerCare(msisdn);
+      } else {
+        // Fallback for other roles (like admin)
+        response = await api.searchCustomer(msisdn);
+      }
+      
       const data = response.data;
 
       const claim = {
@@ -115,7 +129,7 @@ export function ClaimProvider({ children }) {
       submitReplacement,
       submitScreenDamage,
       addExcess,
-      checkExcess,       // new
+      checkExcess,       
       updateClaim,
       clearCurrentClaim,
       setCurrentClaim,
