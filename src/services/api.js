@@ -35,7 +35,8 @@ class ApiClient {
   }
 
   // ---------- PRIVATE REQUEST ----------
-  async _request(endpoint, method = 'GET', body = null) {
+  // Added throwOnSuccessFalse parameter (default true)
+  async _request(endpoint, method = 'GET', body = null, throwOnSuccessFalse = true) {
     // Optional mock
     if (ENABLE_MOCK && endpoint.startsWith('/agent/customer/')) {
       const msisdn = endpoint.split('/').pop();
@@ -69,7 +70,8 @@ class ApiClient {
       if (!response.ok) {
         throw new Error(json.message || `HTTP ${response.status}`);
       }
-      if (!json.success) {
+      // Only throw if success is false and throwOnSuccessFalse is true
+      if (!json.success && throwOnSuccessFalse) {
         throw new Error(json.message || 'Request failed');
       }
       return json;
@@ -155,8 +157,9 @@ class ApiClient {
   }
 
   // Check if Customer Care has added excess for a repair claim
+  // Pass false as the 4th argument to prevent throwing on success: false
   checkScreenDamageExcess(msisdn, claimDate) {
-    return this._request(`/agent/check-excess/${msisdn}/${claimDate}`);
+    return this._request(`/agent/check-excess/${msisdn}/${claimDate}`, 'GET', null, false);
   }
 
   // Create replacement payment (agent)
