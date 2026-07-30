@@ -1,4 +1,3 @@
-// src/services/api.js
 const AUTH_API_BASE = process.env.REACT_APP_AUTH_URL || 'https://regulate-fool-playtime.ngrok-free.dev/api';
 const ENABLE_MOCK = process.env.REACT_APP_ENABLE_MOCK_DATA === 'true';
 const LOGGING = process.env.REACT_APP_ENABLE_LOGGING === 'true';
@@ -35,9 +34,7 @@ class ApiClient {
   }
 
   // ---------- PRIVATE REQUEST ----------
-  // Added throwOnSuccessFalse parameter (default true)
   async _request(endpoint, method = 'GET', body = null, throwOnSuccessFalse = true) {
-    // Optional mock
     if (ENABLE_MOCK && endpoint.startsWith('/agent/customer/')) {
       const msisdn = endpoint.split('/').pop();
       return this.getMockCustomer(msisdn);
@@ -70,7 +67,6 @@ class ApiClient {
       if (!response.ok) {
         throw new Error(json.message || `HTTP ${response.status}`);
       }
-      // Only throw if success is false and throwOnSuccessFalse is true
       if (!json.success && throwOnSuccessFalse) {
         throw new Error(json.message || 'Request failed');
       }
@@ -151,23 +147,18 @@ class ApiClient {
     return this._request(`/agent/customer/${msisdn}`);
   }
 
-  // Calculate excess amount based on fault date (for replacement)
   calculateExcess(msisdn, faultDate) {
     return this._request(`/agent/calculate-excess/${msisdn}/${faultDate}`);
   }
 
-  // Check if Customer Care has added excess for a repair claim
-  // Pass false as the 4th argument to prevent throwing on success: false
   checkScreenDamageExcess(msisdn, claimDate) {
     return this._request(`/agent/check-excess/${msisdn}/${claimDate}`, 'GET', null, false);
   }
 
-  // Create replacement payment (agent)
   createReplacementPayment(payload) {
     return this._request('/agent/replacement-payment', 'POST', payload);
   }
 
-  // Create screen damage (repair) payment (agent)
   createScreenDamagePayment(payload) {
     return this._request('/agent/screen-damage-payment', 'POST', payload);
   }
@@ -176,6 +167,11 @@ class ApiClient {
   // Add repair excess (uses repairAmount and faultDate)
   addScreenDamageExcess(payload) {
     return this._request('/customer-care/screen-damage-excess', 'POST', payload);
+  }
+
+  // Customer Care search customer
+  searchCustomerCare(msisdn) {
+    return this._request(`/customer-care/customer/${msisdn}`);
   }
 
   // ---------- FINANCE ----------
